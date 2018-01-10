@@ -15,949 +15,1309 @@ typedef std::string String;
 typedef std::string Ident;
 
 
-
-
 /********************   Forward Declarations    ********************/
 
 class Program;
+
 class TopDef;
+
 class Arg;
+
 class Block;
+
 class Stmt;
+
 class Item;
+
 class Type;
+
 class Expr;
+
 class AddOp;
+
 class MulOp;
+
 class RelOp;
+
 class Prog;
+
 class FnDef;
+
 class Ar;
+
 class Blk;
+
 class Empty;
+
 class BStmt;
+
 class Decl;
+
 class NoInit;
+
 class Init;
+
 class Ass;
+
 class Incr;
+
 class Decr;
+
 class Ret;
+
 class VRet;
+
 class Cond;
+
 class CondElse;
+
 class While;
+
 class SExp;
+
 class Int;
+
 class Str;
+
 class Bool;
+
 class Void;
+
 class Fun;
+
 class EVar;
+
 class ELitInt;
+
 class ELitTrue;
+
 class ELitFalse;
+
 class EApp;
+
 class EString;
+
 class Neg;
+
 class Not;
+
 class EMul;
+
 class EAdd;
+
 class ERel;
+
 class EAnd;
+
 class EOr;
+
 class Plus;
+
 class Minus;
+
 class Times;
+
 class Div;
+
 class Mod;
+
 class LTH;
+
 class LE;
+
 class GTH;
+
 class GE;
+
 class EQU;
+
 class NE;
+
 class ListTopDef;
+
 class ListArg;
+
 class ListStmt;
+
 class ListItem;
+
 class ListType;
+
 class ListExpr;
 
 
 /********************   Visitor Interfaces    ********************/
-class Visitor
-{
+class Visitor {
 public:
-  virtual ~Visitor() {}
-  virtual void visitProgram(Program *p) = 0;
-  virtual void visitTopDef(TopDef *p) = 0;
-  virtual void visitArg(Arg *p) = 0;
-  virtual void visitBlock(Block *p) = 0;
-  virtual void visitStmt(Stmt *p) = 0;
-  virtual void visitItem(Item *p) = 0;
-  virtual void visitType(Type *p) = 0;
-  virtual void visitExpr(Expr *p) = 0;
-  virtual void visitAddOp(AddOp *p) = 0;
-  virtual void visitMulOp(MulOp *p) = 0;
-  virtual void visitRelOp(RelOp *p) = 0;
-  virtual void visitProg(Prog *p) = 0;
-  virtual void visitFnDef(FnDef *p) = 0;
-  virtual void visitAr(Ar *p) = 0;
-  virtual void visitBlk(Blk *p) = 0;
-  virtual void visitEmpty(Empty *p) = 0;
-  virtual void visitBStmt(BStmt *p) = 0;
-  virtual void visitDecl(Decl *p) = 0;
-  virtual void visitNoInit(NoInit *p) = 0;
-  virtual void visitInit(Init *p) = 0;
-  virtual void visitAss(Ass *p) = 0;
-  virtual void visitIncr(Incr *p) = 0;
-  virtual void visitDecr(Decr *p) = 0;
-  virtual void visitRet(Ret *p) = 0;
-  virtual void visitVRet(VRet *p) = 0;
-  virtual void visitCond(Cond *p) = 0;
-  virtual void visitCondElse(CondElse *p) = 0;
-  virtual void visitWhile(While *p) = 0;
-  virtual void visitSExp(SExp *p) = 0;
-  virtual void visitInt(Int *p) = 0;
-  virtual void visitStr(Str *p) = 0;
-  virtual void visitBool(Bool *p) = 0;
-  virtual void visitVoid(Void *p) = 0;
-  virtual void visitFun(Fun *p) = 0;
-  virtual void visitEVar(EVar *p) = 0;
-  virtual void visitELitInt(ELitInt *p) = 0;
-  virtual void visitELitTrue(ELitTrue *p) = 0;
-  virtual void visitELitFalse(ELitFalse *p) = 0;
-  virtual void visitEApp(EApp *p) = 0;
-  virtual void visitEString(EString *p) = 0;
-  virtual void visitNeg(Neg *p) = 0;
-  virtual void visitNot(Not *p) = 0;
-  virtual void visitEMul(EMul *p) = 0;
-  virtual void visitEAdd(EAdd *p) = 0;
-  virtual void visitERel(ERel *p) = 0;
-  virtual void visitEAnd(EAnd *p) = 0;
-  virtual void visitEOr(EOr *p) = 0;
-  virtual void visitPlus(Plus *p) = 0;
-  virtual void visitMinus(Minus *p) = 0;
-  virtual void visitTimes(Times *p) = 0;
-  virtual void visitDiv(Div *p) = 0;
-  virtual void visitMod(Mod *p) = 0;
-  virtual void visitLTH(LTH *p) = 0;
-  virtual void visitLE(LE *p) = 0;
-  virtual void visitGTH(GTH *p) = 0;
-  virtual void visitGE(GE *p) = 0;
-  virtual void visitEQU(EQU *p) = 0;
-  virtual void visitNE(NE *p) = 0;
-  virtual void visitListTopDef(ListTopDef *p) = 0;
-  virtual void visitListArg(ListArg *p) = 0;
-  virtual void visitListStmt(ListStmt *p) = 0;
-  virtual void visitListItem(ListItem *p) = 0;
-  virtual void visitListType(ListType *p) = 0;
-  virtual void visitListExpr(ListExpr *p) = 0;
+    virtual ~Visitor() {}
+
+    virtual void visitProgram(Program *p) = 0;
+
+    virtual void visitTopDef(TopDef *p) = 0;
+
+    virtual void visitArg(Arg *p) = 0;
+
+    virtual void visitBlock(Block *p) = 0;
+
+    virtual void visitStmt(Stmt *p) = 0;
+
+    virtual void visitItem(Item *p) = 0;
+
+    virtual void visitType(Type *p) = 0;
+
+    virtual void visitExpr(Expr *p) = 0;
+
+    virtual void visitAddOp(AddOp *p) = 0;
+
+    virtual void visitMulOp(MulOp *p) = 0;
+
+    virtual void visitRelOp(RelOp *p) = 0;
+
+    virtual void visitProg(Prog *p) = 0;
+
+    virtual void visitFnDef(FnDef *p) = 0;
+
+    virtual void visitAr(Ar *p) = 0;
+
+    virtual void visitBlk(Blk *p) = 0;
+
+    virtual void visitEmpty(Empty *p) = 0;
+
+    virtual void visitBStmt(BStmt *p) = 0;
+
+    virtual void visitDecl(Decl *p) = 0;
+
+    virtual void visitNoInit(NoInit *p) = 0;
+
+    virtual void visitInit(Init *p) = 0;
+
+    virtual void visitAss(Ass *p) = 0;
+
+    virtual void visitIncr(Incr *p) = 0;
+
+    virtual void visitDecr(Decr *p) = 0;
+
+    virtual void visitRet(Ret *p) = 0;
+
+    virtual void visitVRet(VRet *p) = 0;
+
+    virtual void visitCond(Cond *p) = 0;
+
+    virtual void visitCondElse(CondElse *p) = 0;
+
+    virtual void visitWhile(While *p) = 0;
+
+    virtual void visitSExp(SExp *p) = 0;
+
+    virtual void visitInt(Int *p) = 0;
+
+    virtual void visitStr(Str *p) = 0;
+
+    virtual void visitBool(Bool *p) = 0;
+
+    virtual void visitVoid(Void *p) = 0;
+
+    virtual void visitFun(Fun *p) = 0;
+
+    virtual void visitEVar(EVar *p) = 0;
+
+    virtual void visitELitInt(ELitInt *p) = 0;
+
+    virtual void visitELitTrue(ELitTrue *p) = 0;
+
+    virtual void visitELitFalse(ELitFalse *p) = 0;
+
+    virtual void visitEApp(EApp *p) = 0;
+
+    virtual void visitEString(EString *p) = 0;
+
+    virtual void visitNeg(Neg *p) = 0;
+
+    virtual void visitNot(Not *p) = 0;
+
+    virtual void visitEMul(EMul *p) = 0;
+
+    virtual void visitEAdd(EAdd *p) = 0;
+
+    virtual void visitERel(ERel *p) = 0;
+
+    virtual void visitEAnd(EAnd *p) = 0;
+
+    virtual void visitEOr(EOr *p) = 0;
+
+    virtual void visitPlus(Plus *p) = 0;
+
+    virtual void visitMinus(Minus *p) = 0;
+
+    virtual void visitTimes(Times *p) = 0;
+
+    virtual void visitDiv(Div *p) = 0;
+
+    virtual void visitMod(Mod *p) = 0;
+
+    virtual void visitLTH(LTH *p) = 0;
+
+    virtual void visitLE(LE *p) = 0;
+
+    virtual void visitGTH(GTH *p) = 0;
+
+    virtual void visitGE(GE *p) = 0;
+
+    virtual void visitEQU(EQU *p) = 0;
+
+    virtual void visitNE(NE *p) = 0;
+
+    virtual void visitListTopDef(ListTopDef *p) = 0;
+
+    virtual void visitListArg(ListArg *p) = 0;
+
+    virtual void visitListStmt(ListStmt *p) = 0;
+
+    virtual void visitListItem(ListItem *p) = 0;
+
+    virtual void visitListType(ListType *p) = 0;
+
+    virtual void visitListExpr(ListExpr *p) = 0;
 
 
-  virtual void visitInteger(Integer x) = 0;
-  virtual void visitChar(Char x) = 0;
-  virtual void visitDouble(Double x) = 0;
-  virtual void visitString(String x) = 0;
-  virtual void visitIdent(Ident x) = 0;
+    virtual void visitInteger(Integer x) = 0;
+
+    virtual void visitChar(Char x) = 0;
+
+    virtual void visitDouble(Double x) = 0;
+
+    virtual void visitString(String x) = 0;
+
+    virtual void visitIdent(Ident x) = 0;
 
 };
 
 
-class Visitable
-{
- public:
-  virtual ~Visitable() {}
-  virtual void accept(Visitor *v) = 0;
+class Visitable {
+public:
+    virtual ~Visitable() {}
+
+    virtual void accept(Visitor *v) = 0;
 };
 
 
 /********************   Abstract Syntax Classes    ********************/
 
-class Program : public Visitable
-{
+class Program : public Visitable {
 public:
-  virtual Program *clone() const = 0;
-  int line_number;
+    virtual Program *clone() const = 0;
+
+    int line_number;
 };
 
-class TopDef : public Visitable
-{
+class TopDef : public Visitable {
 public:
-  virtual TopDef *clone() const = 0;
-  int line_number;
+    virtual TopDef *clone() const = 0;
+
+    int line_number;
 };
 
-class Arg : public Visitable
-{
+class Arg : public Visitable {
 public:
-  virtual Arg *clone() const = 0;
-  int line_number;
+    virtual Arg *clone() const = 0;
+
+    int line_number;
 };
 
-class Block : public Visitable
-{
+class Block : public Visitable {
 public:
-  virtual Block *clone() const = 0;
-  int line_number;
+    virtual Block *clone() const = 0;
+
+    int line_number;
 };
 
-class Stmt : public Visitable
-{
+class Stmt : public Visitable {
 public:
-  virtual Stmt *clone() const = 0;
-  int line_number;
+    virtual Stmt *clone() const = 0;
+
+    int line_number;
 };
 
-class Item : public Visitable
-{
+class Item : public Visitable {
 public:
-  virtual Item *clone() const = 0;
-  int line_number;
+    virtual Item *clone() const = 0;
+
+    int line_number;
 };
 
-class Type : public Visitable
-{
+class Type : public Visitable {
 public:
-  virtual Type *clone() const = 0;
-  int line_number;
+    virtual Type *clone() const = 0;
+
+    int line_number;
 };
 
-class Expr : public Visitable
-{
+class Expr : public Visitable {
 public:
-  virtual Expr *clone() const = 0;
-  int line_number;
+    virtual Expr *clone() const = 0;
+
+    int line_number;
 };
 
-class AddOp : public Visitable
-{
+class AddOp : public Visitable {
 public:
-  virtual AddOp *clone() const = 0;
-  int line_number;
+    virtual AddOp *clone() const = 0;
+
+    int line_number;
 };
 
-class MulOp : public Visitable
-{
+class MulOp : public Visitable {
 public:
-  virtual MulOp *clone() const = 0;
-  int line_number;
+    virtual MulOp *clone() const = 0;
+
+    int line_number;
 };
 
-class RelOp : public Visitable
-{
+class RelOp : public Visitable {
 public:
-  virtual RelOp *clone() const = 0;
-  int line_number;
-};
+    virtual RelOp *clone() const = 0;
 
+    int line_number;
+};
 
 
-class Prog : public Program
-{
+class Prog : public Program {
 public:
-  ListTopDef *listtopdef_;
+    ListTopDef *listtopdef_;
+
+    Prog(const Prog&);
+
+    Prog& operator=(const Prog&);
+
+    Prog(ListTopDef *p1);
+
+    ~Prog();
+
+    virtual void accept(Visitor *v);
+
+    virtual Prog *clone() const;
 
-  Prog(const Prog &);
-  Prog &operator=(const Prog &);
-  Prog(ListTopDef *p1);
-  ~Prog();
-  virtual void accept(Visitor *v);
-  virtual Prog *clone() const;
-  void swap(Prog &);
+    void swap(Prog&);
 };
 
-class FnDef : public TopDef
-{
+class FnDef : public TopDef {
 public:
-  Type *type_;
-  Ident ident_;
-  ListArg *listarg_;
-  Block *block_;
+    Type *type_;
+    Ident ident_;
+    ListArg *listarg_;
+    Block *block_;
 
-  FnDef(const FnDef &);
-  FnDef &operator=(const FnDef &);
-  FnDef(Type *p1, Ident p2, ListArg *p3, Block *p4);
-  ~FnDef();
-  virtual void accept(Visitor *v);
-  virtual FnDef *clone() const;
-  void swap(FnDef &);
+    FnDef(const FnDef&);
+
+    FnDef& operator=(const FnDef&);
+
+    FnDef(Type *p1, Ident p2, ListArg *p3, Block *p4);
+
+    ~FnDef();
+
+    virtual void accept(Visitor *v);
+
+    virtual FnDef *clone() const;
+
+    void swap(FnDef&);
 };
 
-class Ar : public Arg
-{
+class Ar : public Arg {
 public:
-  Type *type_;
-  Ident ident_;
+    Type *type_;
+    Ident ident_;
+
+    Ar(const Ar&);
+
+    Ar& operator=(const Ar&);
+
+    Ar(Type *p1, Ident p2);
 
-  Ar(const Ar &);
-  Ar &operator=(const Ar &);
-  Ar(Type *p1, Ident p2);
-  ~Ar();
-  virtual void accept(Visitor *v);
-  virtual Ar *clone() const;
-  void swap(Ar &);
+    ~Ar();
+
+    virtual void accept(Visitor *v);
+
+    virtual Ar *clone() const;
+
+    void swap(Ar&);
 };
 
-class Blk : public Block
-{
+class Blk : public Block {
 public:
-  ListStmt *liststmt_;
+    ListStmt *liststmt_;
+
+    Blk(const Blk&);
+
+    Blk& operator=(const Blk&);
 
-  Blk(const Blk &);
-  Blk &operator=(const Blk &);
-  Blk(ListStmt *p1);
-  ~Blk();
-  virtual void accept(Visitor *v);
-  virtual Blk *clone() const;
-  void swap(Blk &);
+    Blk(ListStmt *p1);
+
+    ~Blk();
+
+    virtual void accept(Visitor *v);
+
+    virtual Blk *clone() const;
+
+    void swap(Blk&);
 };
 
-class Empty : public Stmt
-{
+class Empty : public Stmt {
 public:
+
+    Empty(const Empty&);
 
-  Empty(const Empty &);
-  Empty &operator=(const Empty &);
-  Empty();
-  ~Empty();
-  virtual void accept(Visitor *v);
-  virtual Empty *clone() const;
-  void swap(Empty &);
+    Empty& operator=(const Empty&);
+
+    Empty();
+
+    ~Empty();
+
+    virtual void accept(Visitor *v);
+
+    virtual Empty *clone() const;
+
+    void swap(Empty&);
 };
 
-class BStmt : public Stmt
-{
+class BStmt : public Stmt {
 public:
-  Block *block_;
+    Block *block_;
+
+    BStmt(const BStmt&);
+
+    BStmt& operator=(const BStmt&);
+
+    BStmt(Block *p1);
+
+    ~BStmt();
 
-  BStmt(const BStmt &);
-  BStmt &operator=(const BStmt &);
-  BStmt(Block *p1);
-  ~BStmt();
-  virtual void accept(Visitor *v);
-  virtual BStmt *clone() const;
-  void swap(BStmt &);
+    virtual void accept(Visitor *v);
+
+    virtual BStmt *clone() const;
+
+    void swap(BStmt&);
 };
 
-class Decl : public Stmt
-{
+class Decl : public Stmt {
 public:
-  Type *type_;
-  ListItem *listitem_;
+    Type *type_;
+    ListItem *listitem_;
+
+    Decl(const Decl&);
+
+    Decl& operator=(const Decl&);
+
+    Decl(Type *p1, ListItem *p2);
 
-  Decl(const Decl &);
-  Decl &operator=(const Decl &);
-  Decl(Type *p1, ListItem *p2);
-  ~Decl();
-  virtual void accept(Visitor *v);
-  virtual Decl *clone() const;
-  void swap(Decl &);
+    ~Decl();
+
+    virtual void accept(Visitor *v);
+
+    virtual Decl *clone() const;
+
+    void swap(Decl&);
 };
 
-class Ass : public Stmt
-{
+class Ass : public Stmt {
 public:
-  Ident ident_;
-  Expr *expr_;
+    Ident ident_;
+    Expr *expr_;
+
+    Ass(const Ass&);
+
+    Ass& operator=(const Ass&);
 
-  Ass(const Ass &);
-  Ass &operator=(const Ass &);
-  Ass(Ident p1, Expr *p2);
-  ~Ass();
-  virtual void accept(Visitor *v);
-  virtual Ass *clone() const;
-  void swap(Ass &);
+    Ass(Ident p1, Expr *p2);
+
+    ~Ass();
+
+    virtual void accept(Visitor *v);
+
+    virtual Ass *clone() const;
+
+    void swap(Ass&);
 };
 
-class Incr : public Stmt
-{
+class Incr : public Stmt {
 public:
-  Ident ident_;
+    Ident ident_;
+
+    Incr(const Incr&);
+
+    Incr& operator=(const Incr&);
+
+    Incr(Ident p1);
+
+    ~Incr();
+
+    virtual void accept(Visitor *v);
 
-  Incr(const Incr &);
-  Incr &operator=(const Incr &);
-  Incr(Ident p1);
-  ~Incr();
-  virtual void accept(Visitor *v);
-  virtual Incr *clone() const;
-  void swap(Incr &);
+    virtual Incr *clone() const;
+
+    void swap(Incr&);
 };
 
-class Decr : public Stmt
-{
+class Decr : public Stmt {
 public:
-  Ident ident_;
+    Ident ident_;
+
+    Decr(const Decr&);
+
+    Decr& operator=(const Decr&);
+
+    Decr(Ident p1);
+
+    ~Decr();
 
-  Decr(const Decr &);
-  Decr &operator=(const Decr &);
-  Decr(Ident p1);
-  ~Decr();
-  virtual void accept(Visitor *v);
-  virtual Decr *clone() const;
-  void swap(Decr &);
+    virtual void accept(Visitor *v);
+
+    virtual Decr *clone() const;
+
+    void swap(Decr&);
 };
 
-class Ret : public Stmt
-{
+class Ret : public Stmt {
 public:
-  Expr *expr_;
+    Expr *expr_;
+
+    Ret(const Ret&);
+
+    Ret& operator=(const Ret&);
+
+    Ret(Expr *p1);
 
-  Ret(const Ret &);
-  Ret &operator=(const Ret &);
-  Ret(Expr *p1);
-  ~Ret();
-  virtual void accept(Visitor *v);
-  virtual Ret *clone() const;
-  void swap(Ret &);
+    ~Ret();
+
+    virtual void accept(Visitor *v);
+
+    virtual Ret *clone() const;
+
+    void swap(Ret&);
 };
 
-class VRet : public Stmt
-{
+class VRet : public Stmt {
 public:
+
+    VRet(const VRet&);
+
+    VRet& operator=(const VRet&);
+
+    VRet();
+
+    ~VRet();
+
+    virtual void accept(Visitor *v);
+
+    virtual VRet *clone() const;
 
-  VRet(const VRet &);
-  VRet &operator=(const VRet &);
-  VRet();
-  ~VRet();
-  virtual void accept(Visitor *v);
-  virtual VRet *clone() const;
-  void swap(VRet &);
+    void swap(VRet&);
 };
 
-class Cond : public Stmt
-{
+class Cond : public Stmt {
 public:
-  Expr *expr_;
-  Stmt *stmt_;
+    Expr *expr_;
+    Stmt *stmt_;
 
-  Cond(const Cond &);
-  Cond &operator=(const Cond &);
-  Cond(Expr *p1, Stmt *p2);
-  ~Cond();
-  virtual void accept(Visitor *v);
-  virtual Cond *clone() const;
-  void swap(Cond &);
+    Cond(const Cond&);
+
+    Cond& operator=(const Cond&);
+
+    Cond(Expr *p1, Stmt *p2);
+
+    ~Cond();
+
+    virtual void accept(Visitor *v);
+
+    virtual Cond *clone() const;
+
+    void swap(Cond&);
 };
 
-class CondElse : public Stmt
-{
+class CondElse : public Stmt {
 public:
-  Expr *expr_;
-  Stmt *stmt_1;
-  Stmt *stmt_2;
+    Expr *expr_;
+    Stmt *stmt_1;
+    Stmt *stmt_2;
+
+    CondElse(const CondElse&);
+
+    CondElse& operator=(const CondElse&);
+
+    CondElse(Expr *p1, Stmt *p2, Stmt *p3);
+
+    ~CondElse();
 
-  CondElse(const CondElse &);
-  CondElse &operator=(const CondElse &);
-  CondElse(Expr *p1, Stmt *p2, Stmt *p3);
-  ~CondElse();
-  virtual void accept(Visitor *v);
-  virtual CondElse *clone() const;
-  void swap(CondElse &);
+    virtual void accept(Visitor *v);
+
+    virtual CondElse *clone() const;
+
+    void swap(CondElse&);
 };
 
-class While : public Stmt
-{
+class While : public Stmt {
 public:
-  Expr *expr_;
-  Stmt *stmt_;
+    Expr *expr_;
+    Stmt *stmt_;
+
+    While(const While&);
+
+    While& operator=(const While&);
 
-  While(const While &);
-  While &operator=(const While &);
-  While(Expr *p1, Stmt *p2);
-  ~While();
-  virtual void accept(Visitor *v);
-  virtual While *clone() const;
-  void swap(While &);
+    While(Expr *p1, Stmt *p2);
+
+    ~While();
+
+    virtual void accept(Visitor *v);
+
+    virtual While *clone() const;
+
+    void swap(While&);
 };
 
-class SExp : public Stmt
-{
+class SExp : public Stmt {
 public:
-  Expr *expr_;
+    Expr *expr_;
+
+    SExp(const SExp&);
 
-  SExp(const SExp &);
-  SExp &operator=(const SExp &);
-  SExp(Expr *p1);
-  ~SExp();
-  virtual void accept(Visitor *v);
-  virtual SExp *clone() const;
-  void swap(SExp &);
+    SExp& operator=(const SExp&);
+
+    SExp(Expr *p1);
+
+    ~SExp();
+
+    virtual void accept(Visitor *v);
+
+    virtual SExp *clone() const;
+
+    void swap(SExp&);
 };
 
-class NoInit : public Item
-{
+class NoInit : public Item {
 public:
-  Ident ident_;
+    Ident ident_;
+
+    NoInit(const NoInit&);
+
+    NoInit& operator=(const NoInit&);
+
+    NoInit(Ident p1);
+
+    ~NoInit();
+
+    virtual void accept(Visitor *v);
 
-  NoInit(const NoInit &);
-  NoInit &operator=(const NoInit &);
-  NoInit(Ident p1);
-  ~NoInit();
-  virtual void accept(Visitor *v);
-  virtual NoInit *clone() const;
-  void swap(NoInit &);
+    virtual NoInit *clone() const;
+
+    void swap(NoInit&);
 };
 
-class Init : public Item
-{
+class Init : public Item {
 public:
-  Ident ident_;
-  Expr *expr_;
+    Ident ident_;
+    Expr *expr_;
+
+    Init(const Init&);
+
+    Init& operator=(const Init&);
+
+    Init(Ident p1, Expr *p2);
 
-  Init(const Init &);
-  Init &operator=(const Init &);
-  Init(Ident p1, Expr *p2);
-  ~Init();
-  virtual void accept(Visitor *v);
-  virtual Init *clone() const;
-  void swap(Init &);
+    ~Init();
+
+    virtual void accept(Visitor *v);
+
+    virtual Init *clone() const;
+
+    void swap(Init&);
 };
 
-class Int : public Type
-{
+class Int : public Type {
 public:
+
+    Int(const Int&);
+
+    Int& operator=(const Int&);
 
-  Int(const Int &);
-  Int &operator=(const Int &);
-  Int();
-  ~Int();
-  virtual void accept(Visitor *v);
-  virtual Int *clone() const;
-  void swap(Int &);
+    Int();
+
+    ~Int();
+
+    virtual void accept(Visitor *v);
+
+    virtual Int *clone() const;
+
+    void swap(Int&);
 };
 
-class Str : public Type
-{
+class Str : public Type {
 public:
+
+    Str(const Str&);
+
+    Str& operator=(const Str&);
+
+    Str();
+
+    ~Str();
+
+    virtual void accept(Visitor *v);
+
+    virtual Str *clone() const;
 
-  Str(const Str &);
-  Str &operator=(const Str &);
-  Str();
-  ~Str();
-  virtual void accept(Visitor *v);
-  virtual Str *clone() const;
-  void swap(Str &);
+    void swap(Str&);
 };
 
-class Bool : public Type
-{
+class Bool : public Type {
 public:
 
-  Bool(const Bool &);
-  Bool &operator=(const Bool &);
-  Bool();
-  ~Bool();
-  virtual void accept(Visitor *v);
-  virtual Bool *clone() const;
-  void swap(Bool &);
+    Bool(const Bool&);
+
+    Bool& operator=(const Bool&);
+
+    Bool();
+
+    ~Bool();
+
+    virtual void accept(Visitor *v);
+
+    virtual Bool *clone() const;
+
+    void swap(Bool&);
 };
 
-class Void : public Type
-{
+class Void : public Type {
 public:
+
+    Void(const Void&);
+
+    Void& operator=(const Void&);
+
+    Void();
 
-  Void(const Void &);
-  Void &operator=(const Void &);
-  Void();
-  ~Void();
-  virtual void accept(Visitor *v);
-  virtual Void *clone() const;
-  void swap(Void &);
+    ~Void();
+
+    virtual void accept(Visitor *v);
+
+    virtual Void *clone() const;
+
+    void swap(Void&);
 };
 
-class Fun : public Type
-{
+class Fun : public Type {
 public:
-  Type *type_;
-  ListType *listtype_;
+    Type *type_;
+    ListType *listtype_;
+
+    Fun(const Fun&);
+
+    Fun& operator=(const Fun&);
 
-  Fun(const Fun &);
-  Fun &operator=(const Fun &);
-  Fun(Type *p1, ListType *p2);
-  ~Fun();
-  virtual void accept(Visitor *v);
-  virtual Fun *clone() const;
-  void swap(Fun &);
+    Fun(Type *p1, ListType *p2);
+
+    ~Fun();
+
+    virtual void accept(Visitor *v);
+
+    virtual Fun *clone() const;
+
+    void swap(Fun&);
 };
 
-class EVar : public Expr
-{
+class EVar : public Expr {
 public:
-  Ident ident_;
+    Ident ident_;
+
+    EVar(const EVar&);
 
-  EVar(const EVar &);
-  EVar &operator=(const EVar &);
-  EVar(Ident p1);
-  ~EVar();
-  virtual void accept(Visitor *v);
-  virtual EVar *clone() const;
-  void swap(EVar &);
+    EVar& operator=(const EVar&);
+
+    EVar(Ident p1);
+
+    ~EVar();
+
+    virtual void accept(Visitor *v);
+
+    virtual EVar *clone() const;
+
+    void swap(EVar&);
 };
 
-class ELitInt : public Expr
-{
+class ELitInt : public Expr {
 public:
-  Integer integer_;
+    Integer integer_;
+
+    ELitInt(const ELitInt&);
+
+    ELitInt& operator=(const ELitInt&);
+
+    ELitInt(Integer p1);
+
+    ~ELitInt();
 
-  ELitInt(const ELitInt &);
-  ELitInt &operator=(const ELitInt &);
-  ELitInt(Integer p1);
-  ~ELitInt();
-  virtual void accept(Visitor *v);
-  virtual ELitInt *clone() const;
-  void swap(ELitInt &);
+    virtual void accept(Visitor *v);
+
+    virtual ELitInt *clone() const;
+
+    void swap(ELitInt&);
 };
 
-class ELitTrue : public Expr
-{
+class ELitTrue : public Expr {
 public:
+
+    ELitTrue(const ELitTrue&);
+
+    ELitTrue& operator=(const ELitTrue&);
 
-  ELitTrue(const ELitTrue &);
-  ELitTrue &operator=(const ELitTrue &);
-  ELitTrue();
-  ~ELitTrue();
-  virtual void accept(Visitor *v);
-  virtual ELitTrue *clone() const;
-  void swap(ELitTrue &);
+    ELitTrue();
+
+    ~ELitTrue();
+
+    virtual void accept(Visitor *v);
+
+    virtual ELitTrue *clone() const;
+
+    void swap(ELitTrue&);
 };
 
-class ELitFalse : public Expr
-{
+class ELitFalse : public Expr {
 public:
+
+    ELitFalse(const ELitFalse&);
 
-  ELitFalse(const ELitFalse &);
-  ELitFalse &operator=(const ELitFalse &);
-  ELitFalse();
-  ~ELitFalse();
-  virtual void accept(Visitor *v);
-  virtual ELitFalse *clone() const;
-  void swap(ELitFalse &);
+    ELitFalse& operator=(const ELitFalse&);
+
+    ELitFalse();
+
+    ~ELitFalse();
+
+    virtual void accept(Visitor *v);
+
+    virtual ELitFalse *clone() const;
+
+    void swap(ELitFalse&);
 };
 
-class EApp : public Expr
-{
+class EApp : public Expr {
 public:
-  Ident ident_;
-  ListExpr *listexpr_;
+    Ident ident_;
+    ListExpr *listexpr_;
+
+    EApp(const EApp&);
+
+    EApp& operator=(const EApp&);
+
+    EApp(Ident p1, ListExpr *p2);
+
+    ~EApp();
 
-  EApp(const EApp &);
-  EApp &operator=(const EApp &);
-  EApp(Ident p1, ListExpr *p2);
-  ~EApp();
-  virtual void accept(Visitor *v);
-  virtual EApp *clone() const;
-  void swap(EApp &);
+    virtual void accept(Visitor *v);
+
+    virtual EApp *clone() const;
+
+    void swap(EApp&);
 };
 
-class EString : public Expr
-{
+class EString : public Expr {
 public:
-  String string_;
+    String string_;
+
+    EString(const EString&);
+
+    EString& operator=(const EString&);
+
+    EString(String p1);
 
-  EString(const EString &);
-  EString &operator=(const EString &);
-  EString(String p1);
-  ~EString();
-  virtual void accept(Visitor *v);
-  virtual EString *clone() const;
-  void swap(EString &);
+    ~EString();
+
+    virtual void accept(Visitor *v);
+
+    virtual EString *clone() const;
+
+    void swap(EString&);
 };
 
-class Neg : public Expr
-{
+class Neg : public Expr {
 public:
-  Expr *expr_;
+    Expr *expr_;
+
+    Neg(const Neg&);
+
+    Neg& operator=(const Neg&);
 
-  Neg(const Neg &);
-  Neg &operator=(const Neg &);
-  Neg(Expr *p1);
-  ~Neg();
-  virtual void accept(Visitor *v);
-  virtual Neg *clone() const;
-  void swap(Neg &);
+    Neg(Expr *p1);
+
+    ~Neg();
+
+    virtual void accept(Visitor *v);
+
+    virtual Neg *clone() const;
+
+    void swap(Neg&);
 };
 
-class Not : public Expr
-{
+class Not : public Expr {
 public:
-  Expr *expr_;
+    Expr *expr_;
+
+    Not(const Not&);
+
+    Not& operator=(const Not&);
+
+    Not(Expr *p1);
+
+    ~Not();
+
+    virtual void accept(Visitor *v);
 
-  Not(const Not &);
-  Not &operator=(const Not &);
-  Not(Expr *p1);
-  ~Not();
-  virtual void accept(Visitor *v);
-  virtual Not *clone() const;
-  void swap(Not &);
+    virtual Not *clone() const;
+
+    void swap(Not&);
 };
 
-class EMul : public Expr
-{
+class EMul : public Expr {
 public:
-  Expr *expr_1;
-  MulOp *mulop_;
-  Expr *expr_2;
+    Expr *expr_1;
+    MulOp *mulop_;
+    Expr *expr_2;
+
+    EMul(const EMul&);
+
+    EMul& operator=(const EMul&);
+
+    EMul(Expr *p1, MulOp *p2, Expr *p3);
+
+    ~EMul();
 
-  EMul(const EMul &);
-  EMul &operator=(const EMul &);
-  EMul(Expr *p1, MulOp *p2, Expr *p3);
-  ~EMul();
-  virtual void accept(Visitor *v);
-  virtual EMul *clone() const;
-  void swap(EMul &);
+    virtual void accept(Visitor *v);
+
+    virtual EMul *clone() const;
+
+    void swap(EMul&);
 };
 
-class EAdd : public Expr
-{
+class EAdd : public Expr {
 public:
-  Expr *expr_1;
-  AddOp *addop_;
-  Expr *expr_2;
+    Expr *expr_1;
+    AddOp *addop_;
+    Expr *expr_2;
+
+    EAdd(const EAdd&);
+
+    EAdd& operator=(const EAdd&);
+
+    EAdd(Expr *p1, AddOp *p2, Expr *p3);
 
-  EAdd(const EAdd &);
-  EAdd &operator=(const EAdd &);
-  EAdd(Expr *p1, AddOp *p2, Expr *p3);
-  ~EAdd();
-  virtual void accept(Visitor *v);
-  virtual EAdd *clone() const;
-  void swap(EAdd &);
+    ~EAdd();
+
+    virtual void accept(Visitor *v);
+
+    virtual EAdd *clone() const;
+
+    void swap(EAdd&);
 };
 
-class ERel : public Expr
-{
+class ERel : public Expr {
 public:
-  Expr *expr_1;
-  RelOp *relop_;
-  Expr *expr_2;
+    Expr *expr_1;
+    RelOp *relop_;
+    Expr *expr_2;
+
+    ERel(const ERel&);
+
+    ERel& operator=(const ERel&);
+
+    ERel(Expr *p1, RelOp *p2, Expr *p3);
+
+    ~ERel();
+
+    virtual void accept(Visitor *v);
+
+    virtual ERel *clone() const;
 
-  ERel(const ERel &);
-  ERel &operator=(const ERel &);
-  ERel(Expr *p1, RelOp *p2, Expr *p3);
-  ~ERel();
-  virtual void accept(Visitor *v);
-  virtual ERel *clone() const;
-  void swap(ERel &);
+    void swap(ERel&);
 };
 
-class EAnd : public Expr
-{
+class EAnd : public Expr {
 public:
-  Expr *expr_1;
-  Expr *expr_2;
+    Expr *expr_1;
+    Expr *expr_2;
 
-  EAnd(const EAnd &);
-  EAnd &operator=(const EAnd &);
-  EAnd(Expr *p1, Expr *p2);
-  ~EAnd();
-  virtual void accept(Visitor *v);
-  virtual EAnd *clone() const;
-  void swap(EAnd &);
+    EAnd(const EAnd&);
+
+    EAnd& operator=(const EAnd&);
+
+    EAnd(Expr *p1, Expr *p2);
+
+    ~EAnd();
+
+    virtual void accept(Visitor *v);
+
+    virtual EAnd *clone() const;
+
+    void swap(EAnd&);
 };
 
-class EOr : public Expr
-{
+class EOr : public Expr {
 public:
-  Expr *expr_1;
-  Expr *expr_2;
+    Expr *expr_1;
+    Expr *expr_2;
+
+    EOr(const EOr&);
+
+    EOr& operator=(const EOr&);
+
+    EOr(Expr *p1, Expr *p2);
+
+    ~EOr();
 
-  EOr(const EOr &);
-  EOr &operator=(const EOr &);
-  EOr(Expr *p1, Expr *p2);
-  ~EOr();
-  virtual void accept(Visitor *v);
-  virtual EOr *clone() const;
-  void swap(EOr &);
+    virtual void accept(Visitor *v);
+
+    virtual EOr *clone() const;
+
+    void swap(EOr&);
 };
 
-class Plus : public AddOp
-{
+class Plus : public AddOp {
 public:
+
+    Plus(const Plus&);
+
+    Plus& operator=(const Plus&);
 
-  Plus(const Plus &);
-  Plus &operator=(const Plus &);
-  Plus();
-  ~Plus();
-  virtual void accept(Visitor *v);
-  virtual Plus *clone() const;
-  void swap(Plus &);
+    Plus();
+
+    ~Plus();
+
+    virtual void accept(Visitor *v);
+
+    virtual Plus *clone() const;
+
+    void swap(Plus&);
 };
 
-class Minus : public AddOp
-{
+class Minus : public AddOp {
 public:
+
+    Minus(const Minus&);
 
-  Minus(const Minus &);
-  Minus &operator=(const Minus &);
-  Minus();
-  ~Minus();
-  virtual void accept(Visitor *v);
-  virtual Minus *clone() const;
-  void swap(Minus &);
+    Minus& operator=(const Minus&);
+
+    Minus();
+
+    ~Minus();
+
+    virtual void accept(Visitor *v);
+
+    virtual Minus *clone() const;
+
+    void swap(Minus&);
 };
 
-class Times : public MulOp
-{
+class Times : public MulOp {
 public:
+
+    Times(const Times&);
+
+    Times& operator=(const Times&);
+
+    Times();
+
+    ~Times();
+
+    virtual void accept(Visitor *v);
 
-  Times(const Times &);
-  Times &operator=(const Times &);
-  Times();
-  ~Times();
-  virtual void accept(Visitor *v);
-  virtual Times *clone() const;
-  void swap(Times &);
+    virtual Times *clone() const;
+
+    void swap(Times&);
 };
 
-class Div : public MulOp
-{
+class Div : public MulOp {
 public:
+
+    Div(const Div&);
+
+    Div& operator=(const Div&);
+
+    Div();
 
-  Div(const Div &);
-  Div &operator=(const Div &);
-  Div();
-  ~Div();
-  virtual void accept(Visitor *v);
-  virtual Div *clone() const;
-  void swap(Div &);
+    ~Div();
+
+    virtual void accept(Visitor *v);
+
+    virtual Div *clone() const;
+
+    void swap(Div&);
 };
 
-class Mod : public MulOp
-{
+class Mod : public MulOp {
 public:
+
+    Mod(const Mod&);
+
+    Mod& operator=(const Mod&);
 
-  Mod(const Mod &);
-  Mod &operator=(const Mod &);
-  Mod();
-  ~Mod();
-  virtual void accept(Visitor *v);
-  virtual Mod *clone() const;
-  void swap(Mod &);
+    Mod();
+
+    ~Mod();
+
+    virtual void accept(Visitor *v);
+
+    virtual Mod *clone() const;
+
+    void swap(Mod&);
 };
 
-class LTH : public RelOp
-{
+class LTH : public RelOp {
 public:
+
+    LTH(const LTH&);
+
+    LTH& operator=(const LTH&);
+
+    LTH();
+
+    ~LTH();
+
+    virtual void accept(Visitor *v);
+
+    virtual LTH *clone() const;
 
-  LTH(const LTH &);
-  LTH &operator=(const LTH &);
-  LTH();
-  ~LTH();
-  virtual void accept(Visitor *v);
-  virtual LTH *clone() const;
-  void swap(LTH &);
+    void swap(LTH&);
 };
 
-class LE : public RelOp
-{
+class LE : public RelOp {
 public:
 
-  LE(const LE &);
-  LE &operator=(const LE &);
-  LE();
-  ~LE();
-  virtual void accept(Visitor *v);
-  virtual LE *clone() const;
-  void swap(LE &);
+    LE(const LE&);
+
+    LE& operator=(const LE&);
+
+    LE();
+
+    ~LE();
+
+    virtual void accept(Visitor *v);
+
+    virtual LE *clone() const;
+
+    void swap(LE&);
 };
 
-class GTH : public RelOp
-{
+class GTH : public RelOp {
 public:
+
+    GTH(const GTH&);
+
+    GTH& operator=(const GTH&);
+
+    GTH();
 
-  GTH(const GTH &);
-  GTH &operator=(const GTH &);
-  GTH();
-  ~GTH();
-  virtual void accept(Visitor *v);
-  virtual GTH *clone() const;
-  void swap(GTH &);
+    ~GTH();
+
+    virtual void accept(Visitor *v);
+
+    virtual GTH *clone() const;
+
+    void swap(GTH&);
 };
 
-class GE : public RelOp
-{
+class GE : public RelOp {
 public:
+
+    GE(const GE&);
+
+    GE& operator=(const GE&);
 
-  GE(const GE &);
-  GE &operator=(const GE &);
-  GE();
-  ~GE();
-  virtual void accept(Visitor *v);
-  virtual GE *clone() const;
-  void swap(GE &);
+    GE();
+
+    ~GE();
+
+    virtual void accept(Visitor *v);
+
+    virtual GE *clone() const;
+
+    void swap(GE&);
 };
 
-class EQU : public RelOp
-{
+class EQU : public RelOp {
 public:
+
+    EQU(const EQU&);
 
-  EQU(const EQU &);
-  EQU &operator=(const EQU &);
-  EQU();
-  ~EQU();
-  virtual void accept(Visitor *v);
-  virtual EQU *clone() const;
-  void swap(EQU &);
+    EQU& operator=(const EQU&);
+
+    EQU();
+
+    ~EQU();
+
+    virtual void accept(Visitor *v);
+
+    virtual EQU *clone() const;
+
+    void swap(EQU&);
 };
 
-class NE : public RelOp
-{
+class NE : public RelOp {
 public:
 
-  NE(const NE &);
-  NE &operator=(const NE &);
-  NE();
-  ~NE();
-  virtual void accept(Visitor *v);
-  virtual NE *clone() const;
-  void swap(NE &);
-};
+    NE(const NE&);
 
+    NE& operator=(const NE&);
 
+    NE();
 
-class ListTopDef : public Visitable, public std::vector<TopDef*>
-{
-public:
-  virtual void accept(Visitor *v);
-  virtual ListTopDef *clone() const;
+    ~NE();
+
+    virtual void accept(Visitor *v);
+
+    virtual NE *clone() const;
+
+    void swap(NE&);
 };
+
 
-class ListArg : public Visitable, public std::vector<Arg*>
-{
+class ListTopDef : public Visitable, public std::vector<TopDef *> {
 public:
-  virtual void accept(Visitor *v);
-  virtual ListArg *clone() const;
+    virtual void accept(Visitor *v);
+
+    virtual ListTopDef *clone() const;
 };
 
-class ListStmt : public Visitable, public std::vector<Stmt*>
-{
+class ListArg : public Visitable, public std::vector<Arg *> {
 public:
-  virtual void accept(Visitor *v);
-  virtual ListStmt *clone() const;
+    virtual void accept(Visitor *v);
+
+    virtual ListArg *clone() const;
 };
 
-class ListItem : public Visitable, public std::vector<Item*>
-{
+class ListStmt : public Visitable, public std::vector<Stmt *> {
 public:
-  virtual void accept(Visitor *v);
-  virtual ListItem *clone() const;
+    virtual void accept(Visitor *v);
+
+    virtual ListStmt *clone() const;
 };
 
-class ListType : public Visitable, public std::vector<Type*>
-{
+class ListItem : public Visitable, public std::vector<Item *> {
 public:
-  virtual void accept(Visitor *v);
-  virtual ListType *clone() const;
+    virtual void accept(Visitor *v);
+
+    virtual ListItem *clone() const;
 };
 
-class ListExpr : public Visitable, public std::vector<Expr*>
-{
+class ListType : public Visitable, public std::vector<Type *> {
 public:
-  virtual void accept(Visitor *v);
-  virtual ListExpr *clone() const;
+    virtual void accept(Visitor *v);
+
+    virtual ListType *clone() const;
 };
 
+class ListExpr : public Visitable, public std::vector<Expr *> {
+public:
+    virtual void accept(Visitor *v);
+
+    virtual ListExpr *clone() const;
+};
 
 
 #endif

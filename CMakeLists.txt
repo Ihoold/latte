@@ -10,6 +10,6 @@ add_library(Printer ${CMAKE_SOURCE_DIR}/src/Printer.cpp)
 add_library(Lexer ${CMAKE_SOURCE_DIR}/src/Lexer.cpp)
 add_library(Absyn ${CMAKE_SOURCE_DIR}/src/Absyn.cpp)
 add_library(Compiler ${CMAKE_SOURCE_DIR}/src/Compiler.cpp)
-#
+
 #add_executable(compiler ${CMAKE_SOURCE_DIR}/src/Compiler.cpp)
 #target_link_libraries(compiler Parser Printer Lexer Absyn)
