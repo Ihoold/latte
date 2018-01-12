@@ -345,9 +345,19 @@ public:
     int line_number;
 };
 
+enum class TypeSpecifier {
+    Int,
+    String,
+    Bool,
+    Void,
+    Fun,
+    None
+};
+
 class Type : public Visitable {
 public:
     virtual Type *clone() const = 0;
+    virtual const TypeSpecifier getTypeSpecifier() const = 0;
 
     int line_number;
 };
@@ -359,9 +369,24 @@ public:
     int line_number;
 };
 
+enum class OperatorType {
+    PLUS,
+    MINUS,
+    MULTIPLY,
+    DIVIDE,
+    MODULO,
+    LT,
+    LE,
+    GT,
+    GE,
+    EQ,
+    NEQ
+};
+
 class AddOp : public Visitable {
 public:
     virtual AddOp *clone() const = 0;
+    virtual const OperatorType getOperatorType() const = 0;
 
     int line_number;
 };
@@ -369,6 +394,7 @@ public:
 class MulOp : public Visitable {
 public:
     virtual MulOp *clone() const = 0;
+    virtual const OperatorType getOperatorType() const = 0;
 
     int line_number;
 };
@@ -376,6 +402,7 @@ public:
 class RelOp : public Visitable {
 public:
     virtual RelOp *clone() const = 0;
+    virtual const OperatorType getOperatorType() const = 0;
 
     int line_number;
 };
@@ -748,6 +775,8 @@ public:
     virtual Int *clone() const;
 
     void swap(Int&);
+
+    const TypeSpecifier getTypeSpecifier() const;
 };
 
 class Str : public Type {
@@ -766,6 +795,8 @@ public:
     virtual Str *clone() const;
 
     void swap(Str&);
+
+    const TypeSpecifier getTypeSpecifier() const;
 };
 
 class Bool : public Type {
@@ -784,6 +815,8 @@ public:
     virtual Bool *clone() const;
 
     void swap(Bool&);
+
+    const TypeSpecifier getTypeSpecifier() const;
 };
 
 class Void : public Type {
@@ -802,6 +835,8 @@ public:
     virtual Void *clone() const;
 
     void swap(Void&);
+
+    const TypeSpecifier getTypeSpecifier() const;
 };
 
 class Fun : public Type {
@@ -822,6 +857,8 @@ public:
     virtual Fun *clone() const;
 
     void swap(Fun&);
+
+    const TypeSpecifier getTypeSpecifier() const ;
 };
 
 class EVar : public Expr {
@@ -1093,6 +1130,8 @@ public:
 
     virtual Plus *clone() const;
 
+    virtual const OperatorType getOperatorType() const;
+
     void swap(Plus&);
 };
 
@@ -1110,6 +1149,8 @@ public:
     virtual void accept(Visitor *v);
 
     virtual Minus *clone() const;
+
+    virtual const OperatorType getOperatorType() const;
 
     void swap(Minus&);
 };
@@ -1129,6 +1170,8 @@ public:
 
     virtual Times *clone() const;
 
+    virtual const OperatorType getOperatorType() const;
+
     void swap(Times&);
 };
 
@@ -1146,6 +1189,8 @@ public:
     virtual void accept(Visitor *v);
 
     virtual Div *clone() const;
+
+    virtual const OperatorType getOperatorType() const;
 
     void swap(Div&);
 };
@@ -1165,6 +1210,8 @@ public:
 
     virtual Mod *clone() const;
 
+    virtual const OperatorType getOperatorType() const;
+
     void swap(Mod&);
 };
 
@@ -1182,6 +1229,8 @@ public:
     virtual void accept(Visitor *v);
 
     virtual LTH *clone() const;
+
+    virtual const OperatorType getOperatorType() const;
 
     void swap(LTH&);
 };
@@ -1201,6 +1250,8 @@ public:
 
     virtual LE *clone() const;
 
+    virtual const OperatorType getOperatorType() const;
+
     void swap(LE&);
 };
 
@@ -1218,6 +1269,8 @@ public:
     virtual void accept(Visitor *v);
 
     virtual GTH *clone() const;
+
+    virtual const OperatorType getOperatorType() const;
 
     void swap(GTH&);
 };
@@ -1237,6 +1290,8 @@ public:
 
     virtual GE *clone() const;
 
+    virtual const OperatorType getOperatorType() const;
+
     void swap(GE&);
 };
 
@@ -1255,6 +1310,8 @@ public:
 
     virtual EQU *clone() const;
 
+    virtual const OperatorType getOperatorType() const;
+
     void swap(EQU&);
 };
 
@@ -1272,6 +1329,8 @@ public:
     virtual void accept(Visitor *v);
 
     virtual NE *clone() const;
+
+    virtual const OperatorType getOperatorType() const;
 
     void swap(NE&);
 };

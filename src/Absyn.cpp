@@ -711,6 +711,10 @@ Int *Int::clone() const {
     return new Int(*this);
 }
 
+const TypeSpecifier Int::getTypeSpecifier() const {
+    return TypeSpecifier::Int;
+}
+
 
 /********************   Str    ********************/
 Str::Str() {
@@ -743,6 +747,9 @@ Str *Str::clone() const {
     return new Str(*this);
 }
 
+const TypeSpecifier Str::getTypeSpecifier() const {
+    return TypeSpecifier::String;
+}
 
 /********************   Bool    ********************/
 Bool::Bool() {
@@ -775,6 +782,10 @@ Bool *Bool::clone() const {
     return new Bool(*this);
 }
 
+const TypeSpecifier Bool::getTypeSpecifier() const {
+    return TypeSpecifier::Bool;
+}
+
 
 /********************   Void    ********************/
 Void::Void() {
@@ -805,6 +816,10 @@ void Void::accept(Visitor *v) {
 
 Void *Void::clone() const {
     return new Void(*this);
+}
+
+const TypeSpecifier Void::getTypeSpecifier() const {
+    return TypeSpecifier::Void;
 }
 
 
@@ -845,6 +860,10 @@ void Fun::accept(Visitor *v) {
 
 Fun *Fun::clone() const {
     return new Fun(*this);
+}
+
+const TypeSpecifier Fun::getTypeSpecifier() const {
+    return TypeSpecifier::Fun;
 }
 
 
@@ -1371,6 +1390,10 @@ Plus *Plus::clone() const {
     return new Plus(*this);
 }
 
+const OperatorType Plus::getOperatorType() const {
+    return OperatorType::PLUS;
+}
+
 
 /********************   Minus    ********************/
 Minus::Minus() {
@@ -1401,6 +1424,10 @@ void Minus::accept(Visitor *v) {
 
 Minus *Minus::clone() const {
     return new Minus(*this);
+}
+
+const OperatorType Minus::getOperatorType() const {
+    return OperatorType::MINUS;
 }
 
 
@@ -1435,6 +1462,10 @@ Times *Times::clone() const {
     return new Times(*this);
 }
 
+const OperatorType Times::getOperatorType() const {
+    return OperatorType::MULTIPLY;
+}
+
 
 /********************   Div    ********************/
 Div::Div() {
@@ -1465,6 +1496,10 @@ void Div::accept(Visitor *v) {
 
 Div *Div::clone() const {
     return new Div(*this);
+}
+
+const OperatorType Div::getOperatorType() const {
+    return OperatorType::DIVIDE;
 }
 
 
@@ -1499,6 +1534,10 @@ Mod *Mod::clone() const {
     return new Mod(*this);
 }
 
+const OperatorType Mod::getOperatorType() const {
+    return OperatorType::MODULO;
+}
+
 
 /********************   LTH    ********************/
 LTH::LTH() {
@@ -1529,6 +1568,10 @@ void LTH::accept(Visitor *v) {
 
 LTH *LTH::clone() const {
     return new LTH(*this);
+}
+
+const OperatorType LTH::getOperatorType() const {
+    return OperatorType::LT;
 }
 
 
@@ -1563,6 +1606,10 @@ LE *LE::clone() const {
     return new LE(*this);
 }
 
+const OperatorType LE::getOperatorType() const {
+    return OperatorType::LE;
+}
+
 
 /********************   GTH    ********************/
 GTH::GTH() {
@@ -1593,6 +1640,10 @@ void GTH::accept(Visitor *v) {
 
 GTH *GTH::clone() const {
     return new GTH(*this);
+}
+
+const OperatorType GTH::getOperatorType() const {
+    return OperatorType::GT;
 }
 
 
@@ -1627,6 +1678,10 @@ GE *GE::clone() const {
     return new GE(*this);
 }
 
+const OperatorType GE::getOperatorType() const {
+    return OperatorType::GE;
+}
+
 
 /********************   EQU    ********************/
 EQU::EQU() {
@@ -1659,6 +1714,10 @@ EQU *EQU::clone() const {
     return new EQU(*this);
 }
 
+const OperatorType EQU::getOperatorType() const {
+    return OperatorType::EQ;
+}
+
 
 /********************   NE    ********************/
 NE::NE() {
@@ -1689,6 +1748,10 @@ void NE::accept(Visitor *v) {
 
 NE *NE::clone() const {
     return new NE(*this);
+}
+
+const OperatorType NE::getOperatorType() const {
+    return OperatorType::NEQ;
 }
 
 

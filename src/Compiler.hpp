@@ -2,11 +2,75 @@
 #define SKELETON_HEADER
 /* You might want to change the above name. */
 
+#include <stdexcept>
 #include "Absyn.hpp"
+#include <memory>
+#include <unordered_map>
+
+class ExpResult {
+private:
+    TypeSpecifier type;
+public:
+    ExpResult() : type(TypeSpecifier::None) {};
+    ExpResult(TypeSpecifier t) : type(t) {};
+
+    const TypeSpecifier getType() const {
+        return type;
+    }
+
+    void setType(TypeSpecifier _type) {
+        type = _type;
+    }
+};
+
+class Function {
+private:
+    TypeSpecifier returnType;
+    ListArg* arguments;
+public:
+    Function() {}
+    Function(TypeSpecifier type, ListArg* args) : returnType(type), arguments(args) {}
+
+    const TypeSpecifier getReturnType() const {
+        return returnType;
+    }
+
+    const ListArg* getArguments() const {
+        return arguments;
+    }
+
+};
+
+class CompilationException : public std::logic_error {
+private:
+    int line_num;
+public:
+    CompilationException(const std::string& what, int line) : std::logic_error(what), line_num(line) {};
+
+    int getLine_num() const {
+        return line_num;
+    }
+};
 
 
 class Compiler : public Visitor {
+private:
+    ExpResult lastResult;
+    std::unordered_map<Ident, ExpResult> variables;
+    std::unordered_map<Ident, Function> functions;
+    TypeSpecifier declaredType;
+    TypeSpecifier expectedReturnType;
+    int returnStatements;
+
+    bool typesAreEqual(const TypeSpecifier t1, const TypeSpecifier t2);
+
+    void reportError(std::string&& msg, int line);
+
+    void typesNotSupported(const std::string& operation, int line);
+
 public:
+    Compiler() : lastResult(TypeSpecifier::None) {};
+
     void visitProgram(Program *p);
 
     void visitTopDef(TopDef *p);
@@ -144,7 +208,6 @@ public:
     void visitString(String x);
 
     void visitIdent(Ident x);
-
 };
 
 
