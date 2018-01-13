@@ -40,21 +40,23 @@ int main(int argc, char **argv) {
         exit(2);
     }
 
-    Program *parse_tree = pProgram(input);
-    if (parse_tree) {
-        ShowAbsyn *s = new ShowAbsyn();
-        printf("%s\n\n", s->show(parse_tree));
-        Compiler* compiler = new Compiler();
-        const std::string& path = argv[1];
-        try {
-            parse_tree->accept(compiler);
-        } catch(CompilationException exception) {
-            std::cerr << "ERROR" <<  std::endl;
-            std::cerr << "Line #" << exception.getLine_num() << ": " << exception.what() << std::endl;
-            return -1;
-        }
-    } else {
-        std::cerr << "Unable to parse file" << std::endl;
+    Program *parse_tree = nullptr;
+    try {
+        parse_tree = pProgram(input);
+    } catch (std::invalid_argument ex) {
+        std::cerr << "ERROR" << std::endl;
+        std::cerr << ex.what() << std::endl;
+        return -2;
+    }
+
+    Compiler* compiler = new Compiler();
+//    const std::string& path = argv[1];
+    try {
+        parse_tree->accept(compiler);
+    } catch(CompilationException exception) {
+        std::cerr << "ERROR" <<  std::endl;
+        std::cerr << "Line #" << exception.getLine_num() << ": " << exception.what() << std::endl;
+        return -1;
     }
 
     return 1;

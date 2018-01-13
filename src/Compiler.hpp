@@ -6,6 +6,7 @@
 #include "Absyn.hpp"
 #include <memory>
 #include <unordered_map>
+#include <utility>
 
 class ExpResult {
 private:
@@ -25,18 +26,36 @@ public:
 
 class Function {
 private:
-    TypeSpecifier returnType;
-    ListArg* arguments;
+    TypeSpecifier returnType = TypeSpecifier::None;
+    std::vector<std::pair<Ident, TypeSpecifier>> arguments;
+    std::unordered_map<Ident, ExpResult> variables;
 public:
-    Function() {}
-    Function(TypeSpecifier type, ListArg* args) : returnType(type), arguments(args) {}
+    int returnStatements = 0;
+    Function() = default;
+    Function(TypeSpecifier type, std::vector<std::pair<Ident, TypeSpecifier>> args)
+            : returnType(type), arguments(std::move(args)) {}
+
+    void initVariables() {
+        variables.clear();
+        for (auto arg : arguments) {
+            variables[arg.first] = ExpResult(arg.second);
+        }
+    }
+
+    void setVariables(const std::unordered_map<Ident, ExpResult>& variables) {
+        Function::variables = variables;
+    }
+
+    std::vector<std::pair<Ident, TypeSpecifier>> getArguments() const {
+        return arguments;
+    }
+
+    std::unordered_map<Ident, ExpResult>& getVariables() {
+        return variables;
+    }
 
     const TypeSpecifier getReturnType() const {
         return returnType;
-    }
-
-    const ListArg* getArguments() const {
-        return arguments;
     }
 
 };
@@ -55,12 +74,14 @@ public:
 
 class Compiler : public Visitor {
 private:
-    ExpResult lastResult;
-    std::unordered_map<Ident, ExpResult> variables;
+    enum class Phase {
+        SCANNING_DEFINITIONS, COMPILING
+    };
+    Phase currentPhase = Phase::SCANNING_DEFINITIONS;
     std::unordered_map<Ident, Function> functions;
+    ExpResult lastResult;
+    Function currentFunction;
     TypeSpecifier declaredType;
-    TypeSpecifier expectedReturnType;
-    int returnStatements;
 
     bool typesAreEqual(const TypeSpecifier t1, const TypeSpecifier t2);
 
@@ -208,6 +229,8 @@ public:
     void visitString(String x);
 
     void visitIdent(Ident x);
+
+    bool typeIsDeclarable(const TypeSpecifier t);
 };
 
 

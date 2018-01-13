@@ -90,8 +90,9 @@ int yywrap(void) {
 
 void yyerror(const char *str) {
     extern char *yytext;
-    fprintf(stderr, "error: line %d: %s at %s\n",
-            yy_mylinenumber, str, yytext);
+    char error[1024];
+    sprintf(error, "error: line %d: %s at %s\n", yy_mylinenumber, str, yytext);
+    throw std::invalid_argument(error);
 }
 
 
