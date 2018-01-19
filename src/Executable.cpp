@@ -50,13 +50,21 @@ int main(int argc, char **argv) {
     }
 
     Compiler* compiler = new Compiler();
-//    const std::string& path = argv[1];
     try {
         parse_tree->accept(compiler);
     } catch(CompilationException exception) {
         std::cerr << "ERROR" <<  std::endl;
         std::cerr << "Line #" << exception.getLine_num() << ": " << exception.what() << std::endl;
         return -1;
+    }
+
+    const std::string& path = argv[1];
+    auto outPath = getDirName(path) + getFilename(path) + ".s";
+    std::cerr << "OK" <<  std::endl;
+    {
+        std::ofstream codeStream(outPath, std::ofstream::out);
+        std::copy(compiler->getCompiledCode().begin(), compiler->getCompiledCode().end(),
+                  std::ostream_iterator<std::string>(codeStream, "\n"));
     }
 
     return 1;

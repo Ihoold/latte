@@ -23,20 +23,24 @@ void Compiler::visitMulOp(MulOp *t) {} //abstract class
 void Compiler::visitRelOp(RelOp *t) {} //abstract class
 
 void Compiler::visitProg(Prog *prog) {
-    // error, readInt, readString
-    functions["printInt"] = Function(TypeSpecifier::Void,
-                                     std::vector<std::pair<Ident, TypeSpecifier>> {{"to_print", TypeSpecifier::Int}});
-    functions["printString"] = Function(TypeSpecifier::Void,
-                                     std::vector<std::pair<Ident, TypeSpecifier>> {{"to_print", TypeSpecifier::String}});
-    functions["errror"] = Function(TypeSpecifier::Void, std::vector<std::pair<Ident, TypeSpecifier>> {});
-    functions["readInt"] = Function(TypeSpecifier::Int, std::vector<std::pair<Ident, TypeSpecifier>> {});
-    functions["readString"] = Function(TypeSpecifier::String, std::vector<std::pair<Ident, TypeSpecifier>> {});
+    // TODO: implementations
+    std::vector<std::pair<Ident, VarPtr>> printIntArguments =
+            {{"to_print", getNewRegisterVar(TypeSpecifier::Int)}};
+    functions["printInt"] = Function(TypeSpecifier::Void, printIntArguments);
+
+    std::vector<std::pair<Ident, VarPtr>> printStringArguments =
+            {{"to_print", VarPtr(getNewRegisterVar(TypeSpecifier::String))}};
+    functions["printString"] = Function(TypeSpecifier::Void, printStringArguments);
+
+    functions["errror"] = Function(TypeSpecifier::Void, std::vector<std::pair<Ident, VarPtr>> {});
+    functions["readInt"] = Function(TypeSpecifier::Int, std::vector<std::pair<Ident, VarPtr>> {});
+    functions["readString"] = Function(TypeSpecifier::String, std::vector<std::pair<Ident, VarPtr>> {});
 
     prog->listtopdef_->accept(this);
     if(functions.find("main") == functions.end())
         reportError("No main function found.", prog->line_number);
 
-    if(!typesAreEqual(functions.at("main").getReturnType(), TypeSpecifier::Int)) {
+    if(functions.at("main").getReturnType() != TypeSpecifier::Int) {
         reportError("Type of main function is not int.", prog->line_number);
     }
 }
@@ -45,13 +49,13 @@ void Compiler::visitFnDef(FnDef *fndef) {
     switch (currentPhase) {
         case Phase::SCANNING_DEFINITIONS: {
             fndef->type_->accept(this);
-            if (!typeIsDeclarable(declaredType) && !typesAreEqual(declaredType, TypeSpecifier::Void))
+            if (!typeIsDeclarable(declaredType) && declaredType != TypeSpecifier::Void)
                 reportError("Cannot declare function of this type.", fndef->line_number);
 
             if (functions.find(fndef->ident_) != functions.end())
                 reportError("Function " + fndef->ident_ + " is already declared.", fndef->line_number);
 
-            std::vector<std::pair<Ident, TypeSpecifier>> args;
+            std::vector<std::pair<Ident, VarPtr>> args;
             for (auto arg : *fndef->listarg_) {
                 auto ar = dynamic_cast<Ar *>(arg);
 
@@ -63,7 +67,7 @@ void Compiler::visitFnDef(FnDef *fndef) {
                     reportError("Duplicated argument name", arg->line_number);
                 }
 
-                args.emplace_back(ar->ident_, declaredType);
+                args.emplace_back(ar->ident_, getNewRegisterVar(declaredType));
             }
 
             functions[fndef->ident_] = Function(fndef->type_->getTypeSpecifier(), args);
@@ -73,10 +77,19 @@ void Compiler::visitFnDef(FnDef *fndef) {
             currentFunction = functions[fndef->ident_];
             currentFunction.initVariables();
             currentFunction.returnStatements = 0;
+            std::string arguments_list;
+            bool first = true;
+            for (auto ar : currentFunction.getArguments()) {
+                arguments_list += ((first) ? "" : ", ")+ translateTypeSpecifier(ar.second->getType()) + " " + ar.second->getCode();
+                first = false;
+            }
 
+            compiledCode.push_back("define " + translateTypeSpecifier(fndef->type_->getTypeSpecifier()) + " @" +
+                                           fndef->ident_ + "(" + arguments_list + ") {");
             fndef->block_->accept(this);
+            compiledCode.emplace_back("}\n");
 
-            if (currentFunction.returnStatements == 0) {
+            if (currentFunction.returnStatements == 0 && currentFunction.getReturnType() != TypeSpecifier::Void) {
                 reportError("No return statement in function.", fndef->line_number);
             }
             break;
@@ -85,21 +98,18 @@ void Compiler::visitFnDef(FnDef *fndef) {
 
 void Compiler::visitAr(Ar *ar) {
     ar->type_->accept(this);
-    visitIdent(ar->ident_);
 }
 
 void Compiler::visitBlk(Blk *blk) {
     blk->liststmt_->accept(this);
 }
 
-void Compiler::visitEmpty(Empty *empty) {
-    lastResult = ExpResult(TypeSpecifier::Void);
-}
+void Compiler::visitEmpty(Empty *empty) {}
 
 void Compiler::visitBStmt(BStmt *bstmt) {
+    // TODO: block variables can be defined
     bstmt->block_->accept(this);
-    std::unordered_map<Ident, ExpResult> oldVariables(currentFunction.getVariables());
-    lastResult = ExpResult(TypeSpecifier::Void);
+    std::unordered_map<Ident, VarPtr> oldVariables(currentFunction.getVariables());
     currentFunction.setVariables(oldVariables);
 }
 
@@ -114,83 +124,114 @@ void Compiler::visitDecl(Decl *decl) {
 void Compiler::visitAss(Ass *ass) {
     if (currentFunction.getVariables().find(ass->ident_) == currentFunction.getVariables().end())
         reportError("Variable " + ass->ident_ + " undeclared.", ass->line_number);
-    ExpResult e1 = currentFunction.getVariables().at(ass->ident_);
+    VarPtr e1 = currentFunction.getVariables().at(ass->ident_);
 
     ass->expr_->accept(this);
-    ExpResult e2 = lastResult;
+    VarPtr e2 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), e2.getType()))
+    if (e1->getType() != e2->getType())
         reportError("Type of variable and assigned expression doesn't match.", ass->line_number);
 
-    lastResult = e1;
+    currentFunction.getVariables()[ass->ident_] = e2->copy();
+    lastResult = currentFunction.getVariables()[ass->ident_];
 }
 
 void Compiler::visitIncr(Incr *incr) {
     if (currentFunction.getVariables().find(incr->ident_) == currentFunction.getVariables().end())
         reportError("Variable " + incr->ident_ + " undeclared.", incr->line_number);
-    ExpResult e1 = currentFunction.getVariables().at(incr->ident_);
+    VarPtr e1 = currentFunction.getVariables().at(incr->ident_);
 
-    if (!typesAreEqual(e1.getType(), TypeSpecifier::Int))
-        typesNotSupported("++", incr->line_number);
-
-    lastResult = e1;
+    try {
+        e1->incr(this);
+    } catch(const std::logic_error& ex) {
+        reportError(ex.what(), incr->line_number);
+    }
 }
 
 void Compiler::visitDecr(Decr *decr) {
     if (currentFunction.getVariables().find(decr->ident_) == currentFunction.getVariables().end())
         reportError("Variable " + decr->ident_ + " undeclared.", decr->line_number);
-    ExpResult e1 = currentFunction.getVariables().at(decr->ident_);
+    VarPtr e1 = currentFunction.getVariables().at(decr->ident_);
 
-    if (!typesAreEqual(e1.getType(), TypeSpecifier::Int))
-        typesNotSupported("--", decr->line_number);
-
-    lastResult = e1;
+    try {
+        e1->decr(this);
+    } catch(const std::logic_error& ex) {
+        reportError(ex.what(), decr->line_number);
+    }
 }
 
 void Compiler::visitRet(Ret *ret) {
     ret->expr_->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), currentFunction.getReturnType())) {
+    if (e1->getType() != currentFunction.getReturnType())
         reportError("Return type mismatch.", ret->line_number);
-    }
 
     currentFunction.returnStatements++;
 }
 
 void Compiler::visitVRet(VRet *vret) {
-    if (!typesAreEqual(TypeSpecifier::Void, currentFunction.getReturnType())) {
+    if (TypeSpecifier::Void != currentFunction.getReturnType())
         reportError("Return type mismatch.", vret->line_number);
-    }
 
     currentFunction.returnStatements++;
 }
 
 void Compiler::visitCond(Cond *cond) {
     cond->expr_->accept(this);
-    if (!typesAreEqual(lastResult.getType(), TypeSpecifier::Bool))
+
+    if (lastResult->getType() !=TypeSpecifier::Bool)
         reportError("If condition has to be boolean.", cond->line_number);
-    cond->stmt_->accept(this);
-    currentFunction.returnStatements = 0;
+
+    if(lastResult->isConst()) {
+        auto bVar = dynamic_cast<ConstBoolVariable*>(lastResult.get());
+        if (bVar->getValue()) {
+            cond->stmt_->accept(this);
+        }
+    } else {
+        // TODO
+        cond->stmt_->accept(this);
+        currentFunction.returnStatements = 0;
+    }
 }
 
 void Compiler::visitCondElse(CondElse *condelse) {
     condelse->expr_->accept(this);
-    if (!typesAreEqual(lastResult.getType(), TypeSpecifier::Bool))
+    if (lastResult->getType() != TypeSpecifier::Bool)
         reportError("If condition has to be boolean.", condelse->line_number);
 
-    condelse->stmt_1->accept(this);
-    currentFunction.returnStatements = 0;
-    condelse->stmt_2->accept(this);
-    currentFunction.returnStatements = 0;
+
+    if(lastResult->isConst()) {
+        auto bVar = dynamic_cast<ConstBoolVariable*>(lastResult.get());
+        if (bVar->getValue()) {
+            condelse->stmt_1->accept(this);
+        } else {
+            condelse->stmt_2->accept(this);
+        }
+    } else {
+        condelse->stmt_1->accept(this);
+        int if_returned = currentFunction.returnStatements > 0;
+
+        condelse->stmt_2->accept(this);
+        int else_returned = currentFunction.returnStatements > 0;
+
+        currentFunction.returnStatements = std::min(if_returned, else_returned);
+    }
 }
 
 void Compiler::visitWhile(While *whileLoop) {
     whileLoop->expr_->accept(this);
-    if (!typesAreEqual(lastResult.getType(), TypeSpecifier::Bool))
+    if (lastResult->getType() != TypeSpecifier::Bool)
         reportError("While condition has to be boolean.", whileLoop->line_number);
 
-    whileLoop->stmt_->accept(this);
+    if(lastResult->isConst()) {
+        auto bVar = dynamic_cast<ConstBoolVariable*>(lastResult.get());
+        if(bVar->getValue()) {
+            // TODO
+        }
+    } else {
+        whileLoop->stmt_->accept(this);
+    }
     currentFunction.returnStatements = 0;
 }
 
@@ -202,7 +243,7 @@ void Compiler::visitNoInit(NoInit *noinit) {
     if (currentFunction.getVariables().find(noinit->ident_) != currentFunction.getVariables().end())
         reportError("Variable already exists.", noinit->line_number);
 
-    currentFunction.getVariables()[noinit->ident_] = ExpResult(declaredType);
+    currentFunction.getVariables()[noinit->ident_] = ConstVariable::getConstDefault(declaredType);
 }
 
 void Compiler::visitInit(Init *init) {
@@ -210,10 +251,10 @@ void Compiler::visitInit(Init *init) {
         reportError("Variable already exists.", init->line_number);
 
     init->expr_->accept(this);
-    if (!typesAreEqual(lastResult.getType(), declaredType))
+    if (lastResult->getType() != declaredType)
         reportError("Type of variable and assigned expression doesn't match.", init->line_number);
 
-    currentFunction.getVariables()[init->ident_] = ExpResult(declaredType);
+    currentFunction.getVariables()[init->ident_] = VarPtr(lastResult->copy());
 }
 
 void Compiler::visitInt(Int * intConst) {
@@ -244,16 +285,20 @@ void Compiler::visitEVar(EVar *evar) {
     lastResult = currentFunction.getVariables().at(evar->ident_);
 }
 
+
+const int INT_LIMIT = 1 << 30;
 void Compiler::visitELitInt(ELitInt *elitint) {
-    lastResult = ExpResult(TypeSpecifier::Int);
+    if (elitint->integer_ > INT_LIMIT)
+        reportError("Integer overflow.", elitint->line_number);
+    lastResult = VarPtr(new ConstIntVariable(elitint->integer_));
 }
 
 void Compiler::visitELitTrue(ELitTrue *elittrue) {
-    lastResult = ExpResult(TypeSpecifier::Bool);
+    lastResult = VarPtr(new ConstBoolVariable(true));
 }
 
 void Compiler::visitELitFalse(ELitFalse *elitfalse) {
-    lastResult = ExpResult(TypeSpecifier::Bool);
+    lastResult = VarPtr(new ConstBoolVariable(false));
 }
 
 void Compiler::visitEApp(EApp *eapp) {
@@ -263,154 +308,174 @@ void Compiler::visitEApp(EApp *eapp) {
     if (eapp->listexpr_->size() != functions[eapp->ident_].getArguments().size())
         reportError("Wrong number of function arguments.", eapp->line_number);
 
-    for (auto i = 0; i < functions[eapp->ident_].getArguments().size(); i++) {
-        eapp->listexpr_[i].accept(this);
+    std::stringstream ss;
+    TypeSpecifier retType = functions[eapp->ident_].getReturnType();
+    VarPtr result;
 
-        if (!typesAreEqual(lastResult.getType(), functions[eapp->ident_].getArguments()[i].second))
-            reportError("Type of argument and assigned expression doesn't match.", eapp->line_number);
+    ss << "\t";
+    if(retType != TypeSpecifier::Void) {
+        result = getNewRegisterVar(retType);
+        ss << result->getCode() << " = ";
     }
 
-    lastResult = ExpResult(functions.at(eapp->ident_).getReturnType());
+    ss << "call " << translateTypeSpecifier(retType) << " @" << eapp->ident_ << "(";
+
+    std::string arguments;
+    bool first = true;
+    for (auto i = 0; i < functions[eapp->ident_].getArguments().size(); i++) {
+        (*eapp->listexpr_)[i]->accept(this);
+
+        if (lastResult->getType() != functions[eapp->ident_].getArguments()[i].second->getType())
+            reportError("Type of argument and assigned expression doesn't match.", eapp->line_number);
+
+        ss << ((first) ? "" : ", ") << translateTypeSpecifier(lastResult->getType()) << " " << lastResult->getCode();
+        first = false;
+    }
+
+    ss << ")";
+    compiledCode.push_back(ss.str());
+
+    if(retType != TypeSpecifier::Void) {
+        lastResult = result;
+    }
 }
 
 void Compiler::visitEString(EString *estring) {
-    lastResult = ExpResult(TypeSpecifier::String);
+    lastResult = VarPtr(new ConstStringVariable(estring->string_));
 }
 
 void Compiler::visitNeg(Neg *neg) {
     neg->expr_->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), TypeSpecifier::Int))
+    if (e1->getType() != TypeSpecifier::Int)
         typesNotSupported("-", neg->line_number);
 
-    lastResult = ExpResult(e1.getType());
+    VarPtr e2 = VarPtr(new ConstIntVariable(0));
+    lastResult = e2->sub(e1, this);
 }
 
 void Compiler::visitNot(Not * notOp) {
     notOp->expr_->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), TypeSpecifier::Bool))
-        typesNotSupported("!", notOp->line_number);
-
-    lastResult = ExpResult(e1.getType());
+    try {
+        lastResult = e1->not_(this);
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), notOp->line_number);
+    }
 }
 
 void Compiler::visitEMul(EMul *emul) {
     emul->expr_1->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
     emul->expr_2->accept(this);
-    ExpResult e2 = lastResult;
+    VarPtr e2 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), e2.getType()))
-        reportError("Types doesn't match.", emul->line_number);
-
-    switch (emul->mulop_->getOperatorType()) {
-        case OperatorType::MULTIPLY:
-            if (!typesAreEqual(e1.getType(), TypeSpecifier::Int))
-                typesNotSupported("*", emul->line_number);
-            break;
-        case OperatorType::DIVIDE:
-            if (!typesAreEqual(e1.getType(), TypeSpecifier::Int))
-                typesNotSupported("/", emul->line_number);
-            break;
-        case OperatorType::MODULO:
-            if (!typesAreEqual(e1.getType(), TypeSpecifier::Int))
-                typesNotSupported("%", emul->line_number);
-            break;
-        default:
-            assert(false);
+    try {
+        switch (emul->mulop_->getOperatorType()) {
+            case OperatorType::MULTIPLY:
+                lastResult = e1->mul(e2, this);
+                break;
+            case OperatorType::DIVIDE:
+                lastResult = e1->div(e2, this);
+                break;
+            case OperatorType::MODULO:
+                lastResult = e1->rem(e2, this);
+                break;
+            default:
+                assert(false);
+        }
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), emul->line_number);
     }
-
-    lastResult = ExpResult(e1.getType());
 }
 
 void Compiler::visitEAdd(EAdd *eadd) {
     eadd->expr_1->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
     eadd->expr_2->accept(this);
-    ExpResult e2 = lastResult;
+    VarPtr e2 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), e2.getType()))
-        reportError("Types doesn't match.", eadd->line_number);
-
-    switch (eadd->addop_->getOperatorType()) {
-        case OperatorType::PLUS:
-            if (!typesAreEqual(e1.getType(), TypeSpecifier::Int) && !typesAreEqual(e1.getType(), TypeSpecifier::String))
-                typesNotSupported("+", eadd->line_number);
-            break;
-        case OperatorType::MINUS:
-            if (!typesAreEqual(e1.getType(), TypeSpecifier::Int))
-                typesNotSupported("-", eadd->line_number);
-            break;
-        default:
-            assert(false);
+    try {
+        switch (eadd->addop_->getOperatorType()) {
+            case OperatorType::PLUS:
+                lastResult = e1->add(e2, this);
+                break;
+            case OperatorType::MINUS:
+                lastResult = e1->sub(e2, this);
+                break;
+            default:
+                assert(false);
+        }
+    }  catch (const std::logic_error& ex) {
+        reportError(ex.what(), eadd->line_number);
     }
-
-    lastResult = ExpResult(e1.getType());
 }
 
 void Compiler::visitERel(ERel *erel) {
     erel->expr_1->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
     erel->expr_2->accept(this);
-    ExpResult e2 = lastResult;
+    VarPtr e2 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), e2.getType()))
-        reportError("Types doesn't match.", erel->line_number);
-
-    switch (erel->relop_->getOperatorType()) {
-        case OperatorType::GE:
-        case OperatorType::GT:
-        case OperatorType::LE:
-        case OperatorType::LT:
-        case OperatorType::EQ:
-        case OperatorType::NEQ:
-            if (!typesAreEqual(e1.getType(), TypeSpecifier::Int) && !typesAreEqual(e1.getType(), TypeSpecifier::String))
-                typesNotSupported("compare", erel->line_number);
-            break;
-        default:
-            assert(false);
+    try {
+        switch (erel->relop_->getOperatorType()) {
+            case OperatorType::GE:
+                lastResult = e1->gte(e2, this);
+                break;
+            case OperatorType::GT:
+                lastResult = e1->gt(e2, this);
+                break;
+            case OperatorType::LE:
+                lastResult = e1->lte(e2, this);
+                break;
+            case OperatorType::LT:
+                lastResult = e1->lt(e2, this);
+                break;
+            case OperatorType::EQ:
+                lastResult = e1->eq(e2, this);
+                break;
+            case OperatorType::NEQ:
+                lastResult = e1->neq(e2, this);
+                break;
+            default:
+                assert(false);
+        }
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), erel->line_number);
     }
-
-    lastResult = ExpResult(TypeSpecifier::Bool);
 }
 
 void Compiler::visitEAnd(EAnd *eand) {
     eand->expr_1->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
     eand->expr_2->accept(this);
-    ExpResult e2 = lastResult;
+    VarPtr e2 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), e2.getType()))
-        reportError("Types doesn't match.", eand->line_number);
-
-    if (!typesAreEqual(e1.getType(), TypeSpecifier::Bool))
-        typesNotSupported("&&", eand->line_number);
-
-    lastResult = ExpResult(TypeSpecifier::Bool);
+    try {
+        lastResult = e1->band(e2, this);
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), eand->line_number);
+    }
 }
 
 void Compiler::visitEOr(EOr *eor) {
     eor->expr_1->accept(this);
-    ExpResult e1 = lastResult;
+    VarPtr e1 = lastResult;
 
-    // TODO: add laziness
     eor->expr_2->accept(this);
-    ExpResult e2 = lastResult;
+    VarPtr e2 = lastResult;
 
-    if (!typesAreEqual(e1.getType(), e2.getType()))
-        reportError("Types doesn't match.", eor->line_number);
-
-    if (!typesAreEqual(e1.getType(), TypeSpecifier::Bool))
-        typesNotSupported("||", eor->line_number);
-
-    lastResult = ExpResult(TypeSpecifier::Bool);
+    try {
+        lastResult = e1->bor(e2, this);
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), eor->line_number);
+    }
 }
 
 // Not used.
@@ -486,16 +551,30 @@ void Compiler::reportError(std::string&& msg, int line) {
     throw CompilationException(msg, line);
 }
 
-bool Compiler::typesAreEqual(const TypeSpecifier t1, const TypeSpecifier t2) {
-    return t1 == t2;
-}
-
 void Compiler::typesNotSupported(const std::string& operation, int line) {
     reportError("Provided types are not supported by operation " + operation + ".", line);
 }
 
-bool Compiler::typeIsDeclarable(const TypeSpecifier t) {
-    return typesAreEqual(t, TypeSpecifier::Int) ||
-            typesAreEqual(t, TypeSpecifier::String) ||
-            typesAreEqual(t, TypeSpecifier::Bool);
+
+std::shared_ptr<Variable> Compiler::getNewRegisterVar(TypeSpecifier type) {
+    std::stringstream ss;
+    ss << "%" << counter++;
+    return std::shared_ptr<Variable>(new RegisterVariable(ss.str(), type));
+}
+
+VarPtr ConstVariable::getConstDefault(TypeSpecifier t) {
+    switch(t) {
+        case TypeSpecifier::Int:
+            return VarPtr(new ConstIntVariable());
+        case TypeSpecifier::Bool:
+            return VarPtr(new ConstBoolVariable());
+        case TypeSpecifier::String:
+            return VarPtr(new ConstStringVariable());
+        default:
+            throw std::logic_error("Not supported const generation.");
+    }
+}
+
+void typeCheckFailure(const std::string& operation) {
+    throw std::logic_error("Type check failed in operation " + operation + ".");
 }

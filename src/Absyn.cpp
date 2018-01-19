@@ -1827,5 +1827,29 @@ ListExpr *ListExpr::clone() const {
 }
 
 
+std::string translateTypeSpecifier(TypeSpecifier t) {
+    switch(t) {
+        case TypeSpecifier::Int:
+            return "i32";
+        case TypeSpecifier::String:
+            return "i8*";
+        case TypeSpecifier::Bool:
+            return "i1";
+        case TypeSpecifier::Void:
+            return "void";
+        default:
+            assert(false);
+    }
+}
 
+bool typeIn(TypeSpecifier t, std::vector<TypeSpecifier> types) {
+    for (auto& type : types) {
+        if (type == t)
+            return true;
+    }
+    return false;
+}
 
+bool typeIsDeclarable(const TypeSpecifier t) {
+    return typeIn(t, {TypeSpecifier::Int, TypeSpecifier::String, TypeSpecifier::Bool});
+}
