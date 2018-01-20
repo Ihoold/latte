@@ -9,7 +9,7 @@ add_library(Parser ${CMAKE_SOURCE_DIR}/src/Parser.cpp)
 add_library(Printer ${CMAKE_SOURCE_DIR}/src/Printer.cpp)
 add_library(Lexer ${CMAKE_SOURCE_DIR}/src/Lexer.cpp)
 add_library(Absyn ${CMAKE_SOURCE_DIR}/src/Absyn.cpp)
-add_library(Compiler ${CMAKE_SOURCE_DIR}/src/Compiler.cpp)
+add_library(Compiler ${CMAKE_SOURCE_DIR}/src/Compiler.cpp src/Label.cpp src/Function.cpp src/ConstIntVariable.cpp src/ConstVariable.cpp src/ConstBoolVariable.cpp src/ConstStringVariable.cpp src/RegisterVariable.cpp src/Variable.cpp)
 
 add_executable(exec ${CMAKE_SOURCE_DIR}/src/Executable.cpp)
 target_link_libraries(exec Parser Printer Lexer Absyn Compiler)

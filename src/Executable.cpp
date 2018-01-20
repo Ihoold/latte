@@ -9,6 +9,7 @@
 #include "Parser.hpp"
 #include "Printer.hpp"
 #include "Compiler.hpp"
+#include "CompilationException.hpp"
 
 std::string getFilename(const std::string& path) {
     auto filenameEnd = path.find_last_of('.');
@@ -43,18 +44,19 @@ int main(int argc, char **argv) {
     Program *parse_tree = nullptr;
     try {
         parse_tree = pProgram(input);
-    } catch (std::invalid_argument ex) {
+    } catch (const std::invalid_argument& ex) {
         std::cerr << "ERROR" << std::endl;
-        std::cerr << ex.what() << std::endl;
+        std::cerr << ex.what();
         return -2;
     }
 
-    Compiler* compiler = new Compiler();
+    auto compiler = new Compiler();
     try {
         parse_tree->accept(compiler);
-    } catch(CompilationException exception) {
+    } catch(const CompilationException& exception) {
         std::cerr << "ERROR" <<  std::endl;
         std::cerr << "Line #" << exception.getLine_num() << ": " << exception.what() << std::endl;
+        delete(compiler);
         return -1;
     }
 
@@ -67,5 +69,6 @@ int main(int argc, char **argv) {
                   std::ostream_iterator<std::string>(codeStream, "\n"));
     }
 
+    delete(compiler);
     return 1;
 }

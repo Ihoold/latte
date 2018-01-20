@@ -5,6 +5,12 @@
    algorithms to use context information differently. */
 
 #include "Compiler.hpp"
+#include "Label.hpp"
+#include "CompilationException.hpp"
+#include "ConstStringVariable.hpp"
+#include "ConstBoolVariable.hpp"
+#include "ConstIntVariable.hpp"
+#include "RegisterVariable.hpp"
 #include <algorithm>
 #include <iostream>
 #include <boost/assert.hpp>
@@ -23,18 +29,26 @@ void Compiler::visitMulOp(MulOp *t) {} //abstract class
 void Compiler::visitRelOp(RelOp *t) {} //abstract class
 
 void Compiler::visitProg(Prog *prog) {
-    // TODO: implementations
     std::vector<std::pair<Ident, VarPtr>> printIntArguments =
-            {{"to_print", getNewRegisterVar(TypeSpecifier::Int)}};
+            {{"i", VarPtr(new ConstIntVariable())}};
     functions["printInt"] = Function(TypeSpecifier::Void, printIntArguments);
+    compiledCode.emplace_back("declare void @printInt(i32)");
 
     std::vector<std::pair<Ident, VarPtr>> printStringArguments =
-            {{"to_print", VarPtr(getNewRegisterVar(TypeSpecifier::String))}};
+            {{"string", VarPtr(new ConstStringVariable())}};
     functions["printString"] = Function(TypeSpecifier::Void, printStringArguments);
+    compiledCode.emplace_back("declare void @printString(i8*)");
 
     functions["errror"] = Function(TypeSpecifier::Void, std::vector<std::pair<Ident, VarPtr>> {});
+    compiledCode.emplace_back("declare void @error()");
+
     functions["readInt"] = Function(TypeSpecifier::Int, std::vector<std::pair<Ident, VarPtr>> {});
+    compiledCode.emplace_back("declare i32 @readInt()");
+
     functions["readString"] = Function(TypeSpecifier::String, std::vector<std::pair<Ident, VarPtr>> {});
+    compiledCode.emplace_back("declare i8* @readString()");
+
+    compiledCode.emplace_back("\n");
 
     prog->listtopdef_->accept(this);
     if(functions.find("main") == functions.end())
@@ -67,7 +81,9 @@ void Compiler::visitFnDef(FnDef *fndef) {
                     reportError("Duplicated argument name", arg->line_number);
                 }
 
-                args.emplace_back(ar->ident_, getNewRegisterVar(declaredType));
+                std::stringstream ss;
+                ss << "%ar_" << args.size();
+                args.emplace_back(ar->ident_, VarPtr(new RegisterVariable(ss.str(), declaredType)));
             }
 
             functions[fndef->ident_] = Function(fndef->type_->getTypeSpecifier(), args);
@@ -76,20 +92,22 @@ void Compiler::visitFnDef(FnDef *fndef) {
         case Phase::COMPILING:
             currentFunction = functions[fndef->ident_];
             currentFunction.initVariables();
-            currentFunction.returnStatements = 0;
+            currentFunction.setReturnStatements(0);
             std::string arguments_list;
             bool first = true;
             for (auto ar : currentFunction.getArguments()) {
-                arguments_list += ((first) ? "" : ", ")+ translateTypeSpecifier(ar.second->getType()) + " " + ar.second->getCode();
+                arguments_list += ((first) ? "" : ", ")+ translateTypeSpecifier(ar.second->getType())
+                                  + " " + ar.second->getCode(this);
                 first = false;
             }
 
             compiledCode.push_back("define " + translateTypeSpecifier(fndef->type_->getTypeSpecifier()) + " @" +
                                            fndef->ident_ + "(" + arguments_list + ") {");
+            currentFunction.setLastLabel(currentFunction.getNewLabel(std::vector<int>()).getLabelNum());
             fndef->block_->accept(this);
             compiledCode.emplace_back("}\n");
 
-            if (currentFunction.returnStatements == 0 && currentFunction.getReturnType() != TypeSpecifier::Void) {
+            if (currentFunction.getReturnStatements() == 0 && currentFunction.getReturnType() != TypeSpecifier::Void) {
                 reportError("No return statement in function.", fndef->line_number);
             }
             break;
@@ -107,10 +125,9 @@ void Compiler::visitBlk(Blk *blk) {
 void Compiler::visitEmpty(Empty *empty) {}
 
 void Compiler::visitBStmt(BStmt *bstmt) {
-    // TODO: block variables can be defined
+    currentFunction.getVariables().emplace_back();
     bstmt->block_->accept(this);
-    std::unordered_map<Ident, VarPtr> oldVariables(currentFunction.getVariables());
-    currentFunction.setVariables(oldVariables);
+    currentFunction.clearBlockVariables();
 }
 
 void Compiler::visitDecl(Decl *decl) {
@@ -122,26 +139,23 @@ void Compiler::visitDecl(Decl *decl) {
 }
 
 void Compiler::visitAss(Ass *ass) {
-    if (currentFunction.getVariables().find(ass->ident_) == currentFunction.getVariables().end())
-        reportError("Variable " + ass->ident_ + " undeclared.", ass->line_number);
-    VarPtr e1 = currentFunction.getVariables().at(ass->ident_);
+    try {
+        VarPtr e1 = currentFunction.getVar(ass->ident_);
+        ass->expr_->accept(this);
+        VarPtr e2 = lastResult;
 
-    ass->expr_->accept(this);
-    VarPtr e2 = lastResult;
+        if (e1->getType() != e2->getType())
+            reportError("Type of variable and assigned expression doesn't match.", ass->line_number);
 
-    if (e1->getType() != e2->getType())
-        reportError("Type of variable and assigned expression doesn't match.", ass->line_number);
-
-    currentFunction.getVariables()[ass->ident_] = e2->copy();
-    lastResult = currentFunction.getVariables()[ass->ident_];
+        currentFunction.changeVar(ass->ident_, e2);
+    } catch(const std::logic_error& ex) {
+        reportError(ex.what(), ass->line_number);
+    }
 }
 
 void Compiler::visitIncr(Incr *incr) {
-    if (currentFunction.getVariables().find(incr->ident_) == currentFunction.getVariables().end())
-        reportError("Variable " + incr->ident_ + " undeclared.", incr->line_number);
-    VarPtr e1 = currentFunction.getVariables().at(incr->ident_);
-
     try {
+        VarPtr e1 = currentFunction.getVar(incr->ident_);
         e1->incr(this);
     } catch(const std::logic_error& ex) {
         reportError(ex.what(), incr->line_number);
@@ -149,11 +163,8 @@ void Compiler::visitIncr(Incr *incr) {
 }
 
 void Compiler::visitDecr(Decr *decr) {
-    if (currentFunction.getVariables().find(decr->ident_) == currentFunction.getVariables().end())
-        reportError("Variable " + decr->ident_ + " undeclared.", decr->line_number);
-    VarPtr e1 = currentFunction.getVariables().at(decr->ident_);
-
     try {
+        VarPtr e1 = currentFunction.getVar(decr->ident_);
         e1->decr(this);
     } catch(const std::logic_error& ex) {
         reportError(ex.what(), decr->line_number);
@@ -167,19 +178,23 @@ void Compiler::visitRet(Ret *ret) {
     if (e1->getType() != currentFunction.getReturnType())
         reportError("Return type mismatch.", ret->line_number);
 
-    currentFunction.returnStatements++;
+    std::stringstream ss;
+    ss << "\tret " << translateTypeSpecifier(e1->getType()) << " " << e1->getCode(this);
+    compiledCode.emplace_back(ss.str());
+
+    currentFunction.setReturnStatements(currentFunction.getReturnStatements()+1);
 }
 
 void Compiler::visitVRet(VRet *vret) {
     if (TypeSpecifier::Void != currentFunction.getReturnType())
         reportError("Return type mismatch.", vret->line_number);
 
-    currentFunction.returnStatements++;
+    compiledCode.emplace_back("\tret void");
+    currentFunction.setReturnStatements(currentFunction.getReturnStatements()+1);
 }
 
 void Compiler::visitCond(Cond *cond) {
     cond->expr_->accept(this);
-
     if (lastResult->getType() !=TypeSpecifier::Bool)
         reportError("If condition has to be boolean.", cond->line_number);
 
@@ -189,9 +204,19 @@ void Compiler::visitCond(Cond *cond) {
             cond->stmt_->accept(this);
         }
     } else {
-        // TODO
+        unsigned long jumpCodePosition = compiledCode.size();
+        auto curr_label = currentFunction.getLastLabel();
+
+        auto if_branch_label = currentFunction.getNewLabel({currentFunction.getLastLabel()});
+        compiledCode.emplace_back(if_branch_label.getCode());
+        currentFunction.setLastLabel(if_branch_label.getLabelNum());
         cond->stmt_->accept(this);
-        currentFunction.returnStatements = 0;
+
+        currentFunction.setReturnStatements(0);
+        auto after_if_label = currentFunction.getNewLabel({curr_label, if_branch_label.getLabelNum()});
+        compiledCode.emplace_back(if_branch_label.getCode());
+        currentFunction.setLastLabel(if_branch_label.getLabelNum());
+
     }
 }
 
@@ -210,12 +235,12 @@ void Compiler::visitCondElse(CondElse *condelse) {
         }
     } else {
         condelse->stmt_1->accept(this);
-        int if_returned = currentFunction.returnStatements > 0;
+        int if_returned = currentFunction.getReturnStatements();
 
         condelse->stmt_2->accept(this);
-        int else_returned = currentFunction.returnStatements > 0;
+        int else_returned = currentFunction.getReturnStatements();
 
-        currentFunction.returnStatements = std::min(if_returned, else_returned);
+        currentFunction.setReturnStatements(std::min(if_returned, else_returned));
     }
 }
 
@@ -232,7 +257,7 @@ void Compiler::visitWhile(While *whileLoop) {
     } else {
         whileLoop->stmt_->accept(this);
     }
-    currentFunction.returnStatements = 0;
+    currentFunction.setReturnStatements(0); // TODO ?
 }
 
 void Compiler::visitSExp(SExp *sexp) {
@@ -240,21 +265,24 @@ void Compiler::visitSExp(SExp *sexp) {
 }
 
 void Compiler::visitNoInit(NoInit *noinit) {
-    if (currentFunction.getVariables().find(noinit->ident_) != currentFunction.getVariables().end())
-        reportError("Variable already exists.", noinit->line_number);
+    try {
+        currentFunction.putVar(noinit->ident_, ConstVariable::getConstDefault(declaredType));
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), noinit->line_number);
+    }
 
-    currentFunction.getVariables()[noinit->ident_] = ConstVariable::getConstDefault(declaredType);
 }
 
 void Compiler::visitInit(Init *init) {
-    if (currentFunction.getVariables().find(init->ident_) != currentFunction.getVariables().end())
-        reportError("Variable already exists.", init->line_number);
-
     init->expr_->accept(this);
     if (lastResult->getType() != declaredType)
         reportError("Type of variable and assigned expression doesn't match.", init->line_number);
 
-    currentFunction.getVariables()[init->ident_] = VarPtr(lastResult->copy());
+    try {
+        currentFunction.putVar(init->ident_, VarPtr(lastResult->copy()));
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), init->line_number);
+    }
 }
 
 void Compiler::visitInt(Int * intConst) {
@@ -279,10 +307,11 @@ void Compiler::visitFun(Fun *fun) {
 }
 
 void Compiler::visitEVar(EVar *evar) {
-    if (currentFunction.getVariables().find(evar->ident_) == currentFunction.getVariables().end())
-        reportError("Variable " + evar->ident_ + " undeclared.", evar->line_number);
-
-    lastResult = currentFunction.getVariables().at(evar->ident_);
+    try {
+        lastResult = currentFunction.getVar(evar->ident_);
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), evar->line_number);
+    }
 }
 
 
@@ -314,8 +343,8 @@ void Compiler::visitEApp(EApp *eapp) {
 
     ss << "\t";
     if(retType != TypeSpecifier::Void) {
-        result = getNewRegisterVar(retType);
-        ss << result->getCode() << " = ";
+        result = currentFunction.getNewRegisterVar(retType);
+        ss << result->getCode(this) << " = ";
     }
 
     ss << "call " << translateTypeSpecifier(retType) << " @" << eapp->ident_ << "(";
@@ -328,7 +357,7 @@ void Compiler::visitEApp(EApp *eapp) {
         if (lastResult->getType() != functions[eapp->ident_].getArguments()[i].second->getType())
             reportError("Type of argument and assigned expression doesn't match.", eapp->line_number);
 
-        ss << ((first) ? "" : ", ") << translateTypeSpecifier(lastResult->getType()) << " " << lastResult->getCode();
+        ss << ((first) ? "" : ", ") << translateTypeSpecifier(lastResult->getType()) << " " << lastResult->getCode(this);
         first = false;
     }
 
@@ -348,11 +377,11 @@ void Compiler::visitNeg(Neg *neg) {
     neg->expr_->accept(this);
     VarPtr e1 = lastResult;
 
-    if (e1->getType() != TypeSpecifier::Int)
-        typesNotSupported("-", neg->line_number);
-
-    VarPtr e2 = VarPtr(new ConstIntVariable(0));
-    lastResult = e2->sub(e1, this);
+    try {
+        lastResult = e1->neg(this);
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), neg->line_number);
+    }
 }
 
 void Compiler::visitNot(Not * notOp) {
@@ -516,7 +545,7 @@ void Compiler::visitListStmt(ListStmt *liststmt) {
     for (auto elem : *liststmt) {
         elem->accept(this);
         // Unreachable code optimalization.
-        if (currentFunction.returnStatements > 0)
+        if (currentFunction.getReturnStatements() > 0)
             return;
     }
 }
@@ -551,30 +580,10 @@ void Compiler::reportError(std::string&& msg, int line) {
     throw CompilationException(msg, line);
 }
 
-void Compiler::typesNotSupported(const std::string& operation, int line) {
-    reportError("Provided types are not supported by operation " + operation + ".", line);
+Function& Compiler::getCurrentFunction() {
+    return currentFunction;
 }
 
-
-std::shared_ptr<Variable> Compiler::getNewRegisterVar(TypeSpecifier type) {
-    std::stringstream ss;
-    ss << "%" << counter++;
-    return std::shared_ptr<Variable>(new RegisterVariable(ss.str(), type));
-}
-
-VarPtr ConstVariable::getConstDefault(TypeSpecifier t) {
-    switch(t) {
-        case TypeSpecifier::Int:
-            return VarPtr(new ConstIntVariable());
-        case TypeSpecifier::Bool:
-            return VarPtr(new ConstBoolVariable());
-        case TypeSpecifier::String:
-            return VarPtr(new ConstStringVariable());
-        default:
-            throw std::logic_error("Not supported const generation.");
-    }
-}
-
-void typeCheckFailure(const std::string& operation) {
-    throw std::logic_error("Type check failed in operation " + operation + ".");
+Code& Compiler::getCompiledCode() {
+    return compiledCode;
 }

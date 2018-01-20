@@ -6,7 +6,7 @@ pathlib.Path('./bin').mkdir(parents=True, exist_ok=True)
 subprocess.run(["cmake", ".."], cwd="./bin", check=True)
 subprocess.run(["make"], cwd="./bin", check=True)
 
-test_folder = "test/lattests/bad/"
+test_folder = "test/lattests/good/"
 for file in sorted(os.listdir(test_folder)):
     if file.endswith('.lat'):
         print (file, ":")
