@@ -31,6 +31,7 @@ private:
     VarPtr lastResult;
     TypeSpecifier declaredType;
 
+    std::unordered_map<std::string, std::string> knownStrings;
     Code compiledCode;
     void reportError(std::string&& msg, int line);
 public:
@@ -38,6 +39,8 @@ public:
 
     Code& getCompiledCode();
     Function& getCurrentFunction();
+
+    std::string getGlobalStringName(const std::string&);
 
     void visitProgram(Program *p) override;
     void visitTopDef(TopDef *p) override;

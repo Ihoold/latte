@@ -18,4 +18,8 @@ int Label::getLabelNum() {
     return labelNum;
 }
 
+void Label::addLabel(int i) {
+    preds.push_back(i);
+}
+
 Label::Label(int num, std::vector<int> preds_) : preds(std::move(preds_)), labelNum(num) {}

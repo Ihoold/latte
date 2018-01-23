@@ -47,7 +47,8 @@ void Compiler::visitProg(Prog *prog) {
 
     functions["readString"] = Function(TypeSpecifier::String, std::vector<std::pair<Ident, VarPtr>> {});
     compiledCode.emplace_back("declare i8* @readString()");
-
+    compiledCode.emplace_back("declare i8* @strcat(i8*, i8*)");
+    // TODO ^fix this
     compiledCode.emplace_back("\n");
 
     prog->listtopdef_->accept(this);
@@ -56,6 +57,13 @@ void Compiler::visitProg(Prog *prog) {
 
     if(functions.at("main").getReturnType() != TypeSpecifier::Int) {
         reportError("Type of main function is not int.", prog->line_number);
+    }
+
+    for (auto& global : knownStrings) {
+        std::stringstream ss;
+        ss << global.second << " = private unnamed_addr constant [ " << global.first.size() << " x i8] c\"" <<
+                global.first << "\", align 1";
+        compiledCode.emplace_back(ss.str());
     }
 }
 
@@ -105,11 +113,15 @@ void Compiler::visitFnDef(FnDef *fndef) {
                                            fndef->ident_ + "(" + arguments_list + ") {");
             currentFunction.setLastLabel(currentFunction.getNewLabel(std::vector<int>()).getLabelNum());
             fndef->block_->accept(this);
-            compiledCode.emplace_back("}\n");
 
-            if (currentFunction.getReturnStatements() == 0 && currentFunction.getReturnType() != TypeSpecifier::Void) {
-                reportError("No return statement in function.", fndef->line_number);
+            if (currentFunction.getReturnStatements() == 0) {
+                if(currentFunction.getReturnType() != TypeSpecifier::Void) {
+                    reportError("No return statement in function.", fndef->line_number);
+                } else {
+                    compiledCode.emplace_back("\tret void");
+                }
             }
+            compiledCode.emplace_back("}\n");
             break;
     }
 }
@@ -195,10 +207,11 @@ void Compiler::visitVRet(VRet *vret) {
 
 void Compiler::visitCond(Cond *cond) {
     cond->expr_->accept(this);
-    if (lastResult->getType() !=TypeSpecifier::Bool)
+    VarPtr e1 = lastResult;
+    if (e1->getType() !=TypeSpecifier::Bool)
         reportError("If condition has to be boolean.", cond->line_number);
 
-    if(lastResult->isConst()) {
+    if(e1->isConst()) {
         auto bVar = dynamic_cast<ConstBoolVariable*>(lastResult.get());
         if (bVar->getValue()) {
             cond->stmt_->accept(this);
@@ -212,52 +225,151 @@ void Compiler::visitCond(Cond *cond) {
         currentFunction.setLastLabel(if_branch_label.getLabelNum());
         cond->stmt_->accept(this);
 
+        std::vector<int> labels = (currentFunction.getReturnStatements() > 0) ? std::vector<int>{curr_label} :
+                                  std::vector<int>{curr_label, if_branch_label.getLabelNum()};
+        auto after_if_label = currentFunction.getNewLabel(labels);
         currentFunction.setReturnStatements(0);
-        auto after_if_label = currentFunction.getNewLabel({curr_label, if_branch_label.getLabelNum()});
-        compiledCode.emplace_back(if_branch_label.getCode());
-        currentFunction.setLastLabel(if_branch_label.getLabelNum());
+        compiledCode.emplace_back(after_if_label.getCode());
+        currentFunction.setLastLabel(after_if_label.getLabelNum());
 
+        std::stringstream ss;
+        ss << "\t" << "br i1 " << e1->getCode(this) << ", label %" << if_branch_label.getLabelNum() << ", label %"
+           << after_if_label.getLabelNum();
+        compiledCode.insert(compiledCode.begin()+jumpCodePosition, ss.str());
     }
 }
 
 void Compiler::visitCondElse(CondElse *condelse) {
     condelse->expr_->accept(this);
-    if (lastResult->getType() != TypeSpecifier::Bool)
+    VarPtr e1 = lastResult;
+
+    if (e1->getType() != TypeSpecifier::Bool)
         reportError("If condition has to be boolean.", condelse->line_number);
 
-
-    if(lastResult->isConst()) {
-        auto bVar = dynamic_cast<ConstBoolVariable*>(lastResult.get());
+    if(e1->isConst()) {
+        auto bVar = dynamic_cast<ConstBoolVariable*>(e1.get());
         if (bVar->getValue()) {
             condelse->stmt_1->accept(this);
         } else {
             condelse->stmt_2->accept(this);
         }
     } else {
+        unsigned long jumpCodePosition = compiledCode.size();
+        auto curr_label = currentFunction.getLastLabel();
+
+        auto if_branch_label = currentFunction.getNewLabel({currentFunction.getLastLabel()});
+        compiledCode.emplace_back(if_branch_label.getCode());
+        currentFunction.setLastLabel(if_branch_label.getLabelNum());
+        currentFunction.setReturnStatements(0);
         condelse->stmt_1->accept(this);
+        unsigned long ifJumpPosition = compiledCode.size();
         int if_returned = currentFunction.getReturnStatements();
 
+        auto else_branch_label = currentFunction.getNewLabel({currentFunction.getLastLabel()});
+        compiledCode.emplace_back(else_branch_label.getCode());
+        currentFunction.setLastLabel(else_branch_label.getLabelNum());
+        currentFunction.setReturnStatements(0);
         condelse->stmt_2->accept(this);
+        unsigned long elseJumpPosition = compiledCode.size();
         int else_returned = currentFunction.getReturnStatements();
 
+        std::vector<int> labels;
+        if (if_returned <= 0)
+            labels.push_back(if_branch_label.getLabelNum());
+        if (else_returned <= 0)
+            labels.push_back(else_branch_label.getLabelNum());
+
+        auto after_if_label = currentFunction.getNewLabel(labels);
         currentFunction.setReturnStatements(std::min(if_returned, else_returned));
+
+        if (else_returned <= 0) {
+            std::stringstream elseJumpStream;
+            elseJumpStream << "\t" << "br label %" << after_if_label.getLabelNum();
+            compiledCode.insert(compiledCode.begin() + elseJumpPosition, elseJumpStream.str());
+        }
+
+        if (if_returned <= 0) {
+            std::stringstream ifJumpStream;
+            ifJumpStream << "\t" << "br label %" << after_if_label.getLabelNum();
+            compiledCode.insert(compiledCode.begin() + ifJumpPosition, ifJumpStream.str());
+        }
+
+        std::stringstream ss;
+        ss << "\t" << "br i1 " << e1->getCode(this) << ", label %" << if_branch_label.getLabelNum() << ", label %"
+           << else_branch_label.getLabelNum();
+        compiledCode.insert(compiledCode.begin() + jumpCodePosition, ss.str());
+
+        if (currentFunction.getReturnStatements() <= 0) {
+            compiledCode.emplace_back(after_if_label.getCode());
+            currentFunction.setLastLabel(after_if_label.getLabelNum());
+        }
     }
 }
 
 void Compiler::visitWhile(While *whileLoop) {
+    auto oldWhileVars = currentFunction.whileVars;
+
+    auto curr_label = currentFunction.getLastLabel();
+    // check condition
+    auto check_condition_label = currentFunction.getNewLabel({curr_label});
+    std::stringstream ss;
+    auto preWhileVars(currentFunction.getVariables());
+    ss << "\t" << "br label %" << check_condition_label.getLabelNum();
+    compiledCode.emplace_back(ss.str());
+
+    auto checkLabelPosition = compiledCode.size();
+    auto phiCodePosition = compiledCode.size();
+    currentFunction.setLastLabel(check_condition_label.getLabelNum());
+
     whileLoop->expr_->accept(this);
+    VarPtr e1 = lastResult;
+
     if (lastResult->getType() != TypeSpecifier::Bool)
         reportError("While condition has to be boolean.", whileLoop->line_number);
 
     if(lastResult->isConst()) {
         auto bVar = dynamic_cast<ConstBoolVariable*>(lastResult.get());
-        if(bVar->getValue()) {
-            // TODO
+        if(!bVar->getValue()) {
+            return;
         }
-    } else {
-        whileLoop->stmt_->accept(this);
     }
-    currentFunction.setReturnStatements(0); // TODO ?
+    auto whileCondJumpPosition = compiledCode.size();
+
+    // while body
+    std::vector<int> w_labels {check_condition_label.getLabelNum()};
+    auto while_body_label = currentFunction.getNewLabel(w_labels);
+    compiledCode.emplace_back(while_body_label.getCode());
+    currentFunction.setLastLabel(while_body_label.getLabelNum());
+    currentFunction.setReturnStatements(0);
+    whileLoop->stmt_->accept(this);
+    auto while_returns = currentFunction.getReturnStatements();
+    std::stringstream whileJumpStream;
+    whileJumpStream << "\t" << "br label %" << check_condition_label.getLabelNum();
+    compiledCode.emplace_back(whileJumpStream.str());
+
+    // after while
+    std::vector<int> labels {check_condition_label.getLabelNum()};
+    if (while_returns <= 0) {
+        labels.push_back(while_body_label.getLabelNum());
+    }
+    currentFunction.setReturnStatements(0);
+    auto after_while_label = currentFunction.getNewLabel(labels);
+    currentFunction.setLastLabel(after_while_label.getLabelNum());
+    compiledCode.emplace_back(after_while_label.getCode());
+
+    std::stringstream whileCondStream;
+    whileCondStream << "\t" << "br i1 " << e1->getCode(this) << ", label %" << while_body_label.getLabelNum() << ", label %"
+       << after_while_label.getLabelNum();
+    compiledCode.insert(compiledCode.begin() + whileCondJumpPosition, whileCondStream.str());
+
+    if (while_returns <= 0) {
+//        auto code = currentFunction.joinVariablesBlocks(preWhileVars, this, while_body_label.getLabelNum(), curr_label);
+//        compiledCode.insert(compiledCode.begin() + phiCodePosition, code.begin(), code.end());
+        check_condition_label.addLabel(while_body_label.getLabelNum());
+        compiledCode.insert(compiledCode.begin() + checkLabelPosition, check_condition_label.getCode());
+    }
+
+    currentFunction.whileVars = oldWhileVars;
 }
 
 void Compiler::visitSExp(SExp *sexp) {
@@ -308,7 +420,8 @@ void Compiler::visitFun(Fun *fun) {
 
 void Compiler::visitEVar(EVar *evar) {
     try {
-        lastResult = currentFunction.getVar(evar->ident_);
+        auto e1 = currentFunction.getVar(evar->ident_);
+        lastResult = e1;
     } catch (const std::logic_error& ex) {
         reportError(ex.what(), evar->line_number);
     }
@@ -341,14 +454,7 @@ void Compiler::visitEApp(EApp *eapp) {
     TypeSpecifier retType = functions[eapp->ident_].getReturnType();
     VarPtr result;
 
-    ss << "\t";
-    if(retType != TypeSpecifier::Void) {
-        result = currentFunction.getNewRegisterVar(retType);
-        ss << result->getCode(this) << " = ";
-    }
-
-    ss << "call " << translateTypeSpecifier(retType) << " @" << eapp->ident_ << "(";
-
+    std::stringstream call_stream;
     std::string arguments;
     bool first = true;
     for (auto i = 0; i < functions[eapp->ident_].getArguments().size(); i++) {
@@ -357,11 +463,20 @@ void Compiler::visitEApp(EApp *eapp) {
         if (lastResult->getType() != functions[eapp->ident_].getArguments()[i].second->getType())
             reportError("Type of argument and assigned expression doesn't match.", eapp->line_number);
 
-        ss << ((first) ? "" : ", ") << translateTypeSpecifier(lastResult->getType()) << " " << lastResult->getCode(this);
+        call_stream << ((first) ? "" : ", ") << translateTypeSpecifier(lastResult->getType()) << " " << lastResult->getCode(this);
         first = false;
     }
+    call_stream << ")";
 
-    ss << ")";
+    ss << "\t";
+    if(retType != TypeSpecifier::Void) {
+        result = currentFunction.getNewRegisterVar(retType);
+        ss << result->getCode(this) << " = ";
+    }
+
+    ss << "call " << translateTypeSpecifier(retType) << " @" << eapp->ident_ << "(";
+    ss << call_stream.str();
+
     compiledCode.push_back(ss.str());
 
     if(retType != TypeSpecifier::Void) {
@@ -586,4 +701,18 @@ Function& Compiler::getCurrentFunction() {
 
 Code& Compiler::getCompiledCode() {
     return compiledCode;
+}
+
+std::string Compiler::getGlobalStringName(const std::string& toFind) {
+    if (knownStrings.find(toFind) == knownStrings.end()) {
+        std::stringstream ss;
+        ss << "@.str." << knownStrings.size();
+        knownStrings[toFind] = ss.str();
+    }
+
+    return knownStrings[toFind];
+}
+
+bool Compiler::whilePreparation() {
+    return currentFunction.whileVars != nullptr;
 }

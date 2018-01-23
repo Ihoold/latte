@@ -15,6 +15,9 @@ using VarPtr = std::shared_ptr<Variable>;
 void typeCheckFailure(const std::string& operation);
 
 class Variable {
+protected:
+    friend bool operator==(const Variable&, const Variable&);
+    virtual bool isEqual(const Variable& obj) const = 0;
 public:
     bool swap = false;
 

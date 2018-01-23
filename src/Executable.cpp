@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     }
 
     const std::string& path = argv[1];
-    auto outPath = getDirName(path) + getFilename(path) + ".s";
+    auto outPath = getDirName(path) + getFilename(path) + ".ll";
     std::cerr << "OK" <<  std::endl;
     {
         std::ofstream codeStream(outPath, std::ofstream::out);
@@ -70,5 +70,5 @@ int main(int argc, char **argv) {
     }
 
     delete(compiler);
-    return 1;
+    return 0;
 }

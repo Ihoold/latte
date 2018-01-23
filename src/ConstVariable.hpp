@@ -8,6 +8,8 @@
 #include "Variable.hpp"
 
 class ConstVariable : public Variable {
+protected:
+    virtual bool isEqual(const Variable& b) const = 0;
 public:
     bool isConst() override {
         return true;

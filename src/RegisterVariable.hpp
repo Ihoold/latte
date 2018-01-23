@@ -10,7 +10,8 @@
 class RegisterVariable : public Variable {
     std::string reg;
     TypeSpecifier type;
-
+protected:
+    bool isEqual(const Variable& b) const override;
 public:
     RegisterVariable(std::string reg_, TypeSpecifier _type);
 

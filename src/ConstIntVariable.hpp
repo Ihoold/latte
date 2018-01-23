@@ -9,6 +9,8 @@
 
 class ConstIntVariable : public ConstVariable {
     int value;
+protected:
+    bool isEqual(const Variable& b) const override;
 public:
     explicit ConstIntVariable(int i = 0);
 

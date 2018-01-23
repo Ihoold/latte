@@ -16,6 +16,7 @@ public:
     Label(int num, std::vector<int> preds_);
     std::string getCode();
     int getLabelNum();
+    void addLabel(int);
 };
 
 #endif //INSTANT_LABEL_HPP

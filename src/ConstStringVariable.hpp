@@ -9,6 +9,8 @@
 
 class ConstStringVariable : public ConstVariable {
     std::string value;
+protected:
+    bool isEqual(const Variable& b) const override;
 public:
     explicit ConstStringVariable(std::string v = "");;
 

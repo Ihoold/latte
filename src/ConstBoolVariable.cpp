@@ -71,3 +71,8 @@ VarPtr ConstBoolVariable::neq(const VarPtr& ptr, Compiler *compiler) {
         return ptr->neq(VarPtr(new ConstBoolVariable(value)), compiler);
     }
 }
+
+bool ConstBoolVariable::isEqual(const Variable& b) const {
+    auto cbv = dynamic_cast<const ConstBoolVariable&>(b);
+    return value == cbv.value;
+}

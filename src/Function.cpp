@@ -4,11 +4,9 @@
 
 #include <sstream>
 #include <unordered_map>
-#include <utility>
 #include "Function.hpp"
-#include "Variable.hpp"
-#include "Label.hpp"
 #include "RegisterVariable.hpp"
+#include "Compiler.hpp"
 
 std::shared_ptr<Variable> Function::getNewRegisterVar(TypeSpecifier type) {
     std::stringstream ss;
@@ -90,4 +88,38 @@ void Function::changeVar(const Ident& id, VarPtr val) {
     }
 
     throw std::logic_error("Variable undeclared.");
+}
+
+std::vector<std::string> Function::joinVariablesBlocks(std::vector<std::unordered_map<Ident, VarPtr>> other, Compiler* compiler,
+                                                       int label1, int label2) {
+    std::vector<std::string> code;
+    for (int i = 0; i < other.size(); i++) {
+        auto& currBlock1 = variables[i];
+        auto& currBlock2 = other[i];
+
+        for (auto& var : currBlock2) {
+            if (currBlock1.find(var.first) == currBlock1.end())
+                currBlock1.insert(var);
+
+            auto& var1 = *currBlock1.find(var.first);
+            auto& var2 = *currBlock2.find(var.first);
+            if (!(*var1.second == *var2.second)) {
+                std::stringstream ss;
+                assert(var1.second->getType() == var2.second->getType());
+                auto result = getNewPhiVar(var1.second->getType());
+                ss << "\t" << result->getCode(compiler) << " = phi " << translateTypeSpecifier(result->getType())
+                   << " [" << var1.second->getCode(compiler) << ", %" << label1 << "], ["
+                   << var2.second->getCode(compiler) << ", %" << label2 << "]";
+                currBlock1[var.first] = result;
+                code.push_back(ss.str());
+            }
+        }
+    }
+    return code;
+}
+
+VarPtr Function::getNewPhiVar(TypeSpecifier t) {
+    std::stringstream ss;
+    ss << "%phi_" << phi_count++;
+    return VarPtr(new RegisterVariable(ss.str(), t));
 }

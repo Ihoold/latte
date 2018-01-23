@@ -63,7 +63,7 @@ VarPtr ConstIntVariable::mul(const VarPtr& ptr, Compiler *compiler) {
 
     if (ptr->isConst()) {
         auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
-        return {VarPtr(new ConstIntVariable(value * intVar1->value)), {}};
+        return VarPtr(new ConstIntVariable(value * intVar1->value));
     } else {
         return ptr->mul(VarPtr(new ConstIntVariable(value)), compiler);
     }
@@ -172,3 +172,8 @@ VarPtr ConstIntVariable::neq(const VarPtr& ptr, Compiler *compiler) {
 }
 
 ConstIntVariable::ConstIntVariable(int i) : value(i) {}
+
+bool ConstIntVariable::isEqual(const Variable& b) const {
+    auto civ = dynamic_cast<const ConstIntVariable&>(b);
+    return value == civ.value;
+}

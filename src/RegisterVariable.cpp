@@ -56,12 +56,12 @@ VarPtr RegisterVariable::twoOp(const VarPtr& ptr, Compiler *compiler, const std:
 VarPtr RegisterVariable::add(const VarPtr& ptr, Compiler *compiler) {
     switch (ptr->getType()) {
         case TypeSpecifier::Int:
-            return twoOp(ptr, compiler, "iadd");
+            return twoOp(ptr, compiler, "add");
         case TypeSpecifier::String: {
             VarPtr result(compiler->getCurrentFunction().getNewRegisterVar(TypeSpecifier::String));
             std::stringstream ss;
-            ss << "\t" << result->getCode(compiler) << " = call i8* @concat(" << getCode(compiler) << ", " << ptr->getCode(compiler)
-               << ")";
+            ss << "\t" << result->getCode(compiler) << " = call i8* @strcat(" << translateTypeSpecifier(type)
+               << " " << getCode(compiler) << ", " << translateTypeSpecifier(ptr->getType()) << " " << ptr->getCode(compiler) << ")";
             compiler->getCompiledCode().push_back(ss.str());
             return result;
         }
@@ -72,7 +72,7 @@ VarPtr RegisterVariable::add(const VarPtr& ptr, Compiler *compiler) {
 
 VarPtr RegisterVariable::sub(const VarPtr& ptr, Compiler *compiler) {
     typeControl(ptr, {TypeSpecifier::Int}, "-");
-    return twoOp(ptr, compiler, "isub");
+    return twoOp(ptr, compiler, "sub");
 }
 
 void RegisterVariable::incr(Compiler *compiler) {
@@ -82,7 +82,7 @@ void RegisterVariable::incr(Compiler *compiler) {
     std::stringstream ss;
     auto result = compiler->getCurrentFunction().getNewRegisterVar(TypeSpecifier::Int);
 
-    ss << "\t" << result->getCode(compiler) << " = iadd i32 " << this->getCode(compiler) << ", " << "1";
+    ss << "\t" << result->getCode(compiler) << " = add i32 " << this->getCode(compiler) << ", " << "1";
     compiler->getCompiledCode().push_back(ss.str());
 }
 
@@ -93,7 +93,7 @@ void RegisterVariable::decr(Compiler *compiler) {
     std::stringstream ss;
     auto result = compiler->getCurrentFunction().getNewRegisterVar(TypeSpecifier::Int);
 
-    ss << "\t" << result->getCode(compiler) << " = isub i32 " << this->getCode(compiler) << ", " << "1";
+    ss << "\t" << result->getCode(compiler) << " = sub i32 " << this->getCode(compiler) << ", " << "1";
     compiler->getCompiledCode().push_back(ss.str());
 
 }
@@ -105,7 +105,7 @@ VarPtr RegisterVariable::neg(Compiler *compiler) {
 
 VarPtr RegisterVariable::mul(const VarPtr& ptr, Compiler *compiler) {
     typeControl(ptr, {TypeSpecifier::Int}, "*");
-    return twoOp(ptr, compiler, "imul");
+    return twoOp(ptr, compiler, "mul");
 }
 
 VarPtr RegisterVariable::div(const VarPtr& ptr, Compiler *compiler) {
@@ -149,7 +149,7 @@ VarPtr RegisterVariable::not_(Compiler *compiler) {
     std::stringstream ss;
     auto result = compiler->getCurrentFunction().getNewRegisterVar(TypeSpecifier::Bool);
 
-    ss << "\t" << result->getCode(compiler) << " = " << "iadd i1 " << this->getCode(compiler) << ", 1";
+    ss << "\t" << result->getCode(compiler) << " = " << "add i1 " << this->getCode(compiler) << ", 1";
     compiler->getCompiledCode().push_back(ss.str());
 
     return result;
@@ -162,10 +162,10 @@ RegisterVariable::cmp(const VarPtr& ptr, Compiler *compiler, const std::string& 
 
     if(swap) {
         ss << "\t" << result->getCode(compiler) << " = " << "icmp " << operation << " "
-           << type << this->getCode(compiler) << ", " << ptr->getCode(compiler);
+           << type << " " << this->getCode(compiler) << ", " << ptr->getCode(compiler);
     } else {
         ss << "\t" << result->getCode(compiler) << " = " << "icmp " << operation << " "
-           << type << ptr->getCode(compiler) << ", " << this->getCode(compiler);
+           << type << " " << ptr->getCode(compiler) << ", " << this->getCode(compiler);
     }
     swap = false;
     compiler->getCompiledCode().push_back(ss.str());
@@ -210,10 +210,15 @@ VarPtr RegisterVariable::neq(const VarPtr& ptr, Compiler *compiler) {
 
     switch (ptr->getType()) {
         case TypeSpecifier::Int:
-            return cmp(ptr, compiler, "neq", "i32");
+            return cmp(ptr, compiler, "ne", "i32");
         case TypeSpecifier::Bool:
-            return cmp(ptr, compiler, "neq", "i1");
+            return cmp(ptr, compiler, "ne", "i1");
         default:
             typeCheckFailure("!=");
     }
+}
+
+bool RegisterVariable::isEqual(const Variable& b) const {
+    auto brv = dynamic_cast<const RegisterVariable&>(b);
+    return type == brv.type && reg == brv.reg;
 }

@@ -18,10 +18,17 @@ private:
     int counter = 0;
     int lastLabel = 0;
     int returnStatements = 0;
+    int phi_count = 0;
+
 public:
+    std::shared_ptr<std::unordered_map<Ident, std::pair<int, VarPtr>>> whileVars = nullptr;
+
     Function() = default;
     Function(TypeSpecifier type, std::vector<std::pair<Ident, VarPtr>> args);
 
+    std::vector<std::string> joinVariablesBlocks(std::vector<std::unordered_map<Ident, VarPtr>>, Compiler*, int, int);
+
+    std::shared_ptr<Variable> getNewPhiVar(TypeSpecifier);
     std::shared_ptr<Variable> getNewRegisterVar(TypeSpecifier);
     Label getNewLabel(std::vector<int> preds);
 
