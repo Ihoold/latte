@@ -132,6 +132,9 @@ public:
     void visitDouble(Double x) override;
     void visitString(String x) override;
     void visitIdent(Ident x) override;
+    void visitStructInh(StructInh *p) override;
+    void visitMethod(Method *p) override;
+    void visitEMethod(EMethod *p) override;
 };
 
 #endif

@@ -58,7 +58,11 @@ class FnDef;
 
 class StructDef;
 
+class StructInh;
+
 class Attr;
+
+class Method;
 
 class Ar;
 
@@ -123,6 +127,8 @@ class ELitTrue;
 class ELitFalse;
 
 class EApp;
+
+class EMethod;
 
 class EString;
 
@@ -218,7 +224,11 @@ public:
 
     virtual void visitStructDef(StructDef *p) = 0;
 
+    virtual void visitStructInh(StructInh *p) = 0;
+
     virtual void visitAttr(Attr *p) = 0;
+
+    virtual void visitMethod(Method *p) = 0;
 
     virtual void visitAr(Ar *p) = 0;
 
@@ -283,6 +293,8 @@ public:
     virtual void visitELitFalse(ELitFalse *p) = 0;
 
     virtual void visitEApp(EApp *p) = 0;
+
+    virtual void visitEMethod(EMethod *p) = 0;
 
     virtual void visitEString(EString *p) = 0;
 
@@ -554,6 +566,27 @@ public:
     void swap(StructDef&);
 };
 
+class StructInh : public TopDef {
+public:
+    Ident ident_1;
+    Ident ident_2;
+    ListAttribute *listattribute_;
+
+    StructInh(const StructInh&);
+
+    StructInh& operator=(const StructInh&);
+
+    StructInh(Ident p1, Ident p2, ListAttribute *p3);
+
+    ~StructInh();
+
+    virtual void accept(Visitor *v);
+
+    virtual StructInh *clone() const;
+
+    void swap(StructInh&);
+};
+
 class Attr : public Attribute {
 public:
     Type *type_;
@@ -572,6 +605,28 @@ public:
     virtual Attr *clone() const;
 
     void swap(Attr&);
+};
+
+class Method : public Attribute {
+public:
+    Type *type_;
+    Ident ident_;
+    ListArg *listarg_;
+    Block *block_;
+
+    Method(const Method&);
+
+    Method& operator=(const Method&);
+
+    Method(Type *p1, Ident p2, ListArg *p3, Block *p4);
+
+    ~Method();
+
+    virtual void accept(Visitor *v);
+
+    virtual Method *clone() const;
+
+    void swap(Method&);
 };
 
 class Ar : public Arg {
@@ -1221,6 +1276,27 @@ public:
     virtual EApp *clone() const;
 
     void swap(EApp&);
+};
+
+class EMethod : public Expr {
+public:
+    LVal *lval_;
+    Ident ident_;
+    ListExpr *listexpr_;
+
+    EMethod(const EMethod&);
+
+    EMethod& operator=(const EMethod&);
+
+    EMethod(LVal *p1, Ident p2, ListExpr *p3);
+
+    ~EMethod();
+
+    virtual void accept(Visitor *v);
+
+    virtual EMethod *clone() const;
+
+    void swap(EMethod&);
 };
 
 class EString : public Expr {

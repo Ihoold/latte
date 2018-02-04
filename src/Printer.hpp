@@ -43,8 +43,12 @@ public:
 
     void visitStructDef(StructDef *p);
 
+    void visitStructInh(StructInh *p);
+
     void visitAttribute(Attribute *p); /* abstract class */
     void visitAttr(Attr *p);
+
+    void visitMethod(Method *p);
 
     void visitListAttribute(ListAttribute *p);
 
@@ -128,6 +132,8 @@ public:
     void visitELitFalse(ELitFalse *p);
 
     void visitEApp(EApp *p);
+
+    void visitEMethod(EMethod *p);
 
     void visitEString(EString *p);
 
@@ -256,8 +262,12 @@ public:
 
     void visitStructDef(StructDef *p);
 
+    void visitStructInh(StructInh *p);
+
     void visitAttribute(Attribute *p); /* abstract class */
     void visitAttr(Attr *p);
+
+    void visitMethod(Method *p);
 
     void visitListAttribute(ListAttribute *p);
 
@@ -341,6 +351,8 @@ public:
     void visitELitFalse(ELitFalse *p);
 
     void visitEApp(EApp *p);
+
+    void visitEMethod(EMethod *p);
 
     void visitEString(EString *p);
 

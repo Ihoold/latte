@@ -129,6 +129,48 @@ StructDef *StructDef::clone() const {
 }
 
 
+/********************   StructInh    ********************/
+StructInh::StructInh(Ident p1, Ident p2, ListAttribute *p3) {
+    ident_1 = p1;
+    ident_2 = p2;
+    listattribute_ = p3;
+
+}
+
+StructInh::StructInh(const StructInh& other) {
+    ident_1 = other.ident_1;
+    ident_2 = other.ident_2;
+    listattribute_ = other.listattribute_->clone();
+
+}
+
+StructInh& StructInh::operator=(const StructInh& other) {
+    StructInh tmp(other);
+    swap(tmp);
+    return *this;
+}
+
+void StructInh::swap(StructInh& other) {
+    std::swap(ident_1, other.ident_1);
+    std::swap(ident_2, other.ident_2);
+    std::swap(listattribute_, other.listattribute_);
+
+}
+
+StructInh::~StructInh() {
+    delete (listattribute_);
+
+}
+
+void StructInh::accept(Visitor *v) {
+    v->visitStructInh(this);
+}
+
+StructInh *StructInh::clone() const {
+    return new StructInh(*this);
+}
+
+
 /********************   Attr    ********************/
 Attr::Attr(Type *p1, Ident p2) {
     type_ = p1;
@@ -165,6 +207,53 @@ void Attr::accept(Visitor *v) {
 
 Attr *Attr::clone() const {
     return new Attr(*this);
+}
+
+
+/********************   Method    ********************/
+Method::Method(Type *p1, Ident p2, ListArg *p3, Block *p4) {
+    type_ = p1;
+    ident_ = p2;
+    listarg_ = p3;
+    block_ = p4;
+
+}
+
+Method::Method(const Method& other) {
+    type_ = other.type_->clone();
+    ident_ = other.ident_;
+    listarg_ = other.listarg_->clone();
+    block_ = other.block_->clone();
+
+}
+
+Method& Method::operator=(const Method& other) {
+    Method tmp(other);
+    swap(tmp);
+    return *this;
+}
+
+void Method::swap(Method& other) {
+    std::swap(type_, other.type_);
+    std::swap(ident_, other.ident_);
+    std::swap(listarg_, other.listarg_);
+    std::swap(block_, other.block_);
+
+}
+
+Method::~Method() {
+    delete (type_);
+    delete (listarg_);
+    delete (block_);
+
+}
+
+void Method::accept(Visitor *v) {
+    v->visitMethod(this);
+}
+
+Method *Method::clone() const {
+    return new Method(*this);
 }
 
 
@@ -1394,6 +1483,49 @@ void EApp::accept(Visitor *v) {
 
 EApp *EApp::clone() const {
     return new EApp(*this);
+}
+
+
+/********************   EMethod    ********************/
+EMethod::EMethod(LVal *p1, Ident p2, ListExpr *p3) {
+    lval_ = p1;
+    ident_ = p2;
+    listexpr_ = p3;
+
+}
+
+EMethod::EMethod(const EMethod& other) {
+    lval_ = other.lval_->clone();
+    ident_ = other.ident_;
+    listexpr_ = other.listexpr_->clone();
+
+}
+
+EMethod& EMethod::operator=(const EMethod& other) {
+    EMethod tmp(other);
+    swap(tmp);
+    return *this;
+}
+
+void EMethod::swap(EMethod& other) {
+    std::swap(lval_, other.lval_);
+    std::swap(ident_, other.ident_);
+    std::swap(listexpr_, other.listexpr_);
+
+}
+
+EMethod::~EMethod() {
+    delete (lval_);
+    delete (listexpr_);
+
+}
+
+void EMethod::accept(Visitor *v) {
+    v->visitEMethod(this);
+}
+
+EMethod *EMethod::clone() const {
+    return new EMethod(*this);
 }
 
 

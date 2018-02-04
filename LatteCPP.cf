@@ -8,9 +8,13 @@ FnDef.	   TopDef ::= Type Ident "(" [Arg] ")" Block ;
 
 StructDef. TopDef ::= "class" Ident "{" [Attribute] "}" ;
 
-Attr.      Attribute ::= Type Ident ;
+StructInh. TopDef ::= "class" Ident "extends" Ident "{" [Attribute] "}" ;
 
-separator  Attribute ";" ;
+Attr.      Attribute ::= Type Ident ";" ;
+
+Method.    Attribute ::= Type Ident "(" [Arg] ")" Block ;
+
+separator  Attribute "" ;
 
 separator nonempty TopDef "" ;
 
@@ -93,6 +97,8 @@ ELitTrue.  Expr6 ::= "true" ;
 ELitFalse. Expr6 ::= "false" ;
 
 EApp.      Expr6 ::= Ident "(" [Expr] ")" ;
+
+EMethod.   Expr6 ::= LVal "." Ident "(" [Expr] ")" ;
 
 EString.   Expr6 ::= String ;
 

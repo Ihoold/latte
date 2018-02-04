@@ -120,9 +120,10 @@ Program *pProgram(const char *str);
 #define _SYMB_39 298
 #define _SYMB_40 299
 #define _SYMB_41 300
-#define _STRING_ 301
-#define _INTEGER_ 302
-#define _IDENT_ 303
+#define _SYMB_42 301
+#define _STRING_ 302
+#define _INTEGER_ 303
+#define _IDENT_ 304
 
 extern YYSTYPE yylval;
 

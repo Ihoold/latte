@@ -1027,3 +1027,15 @@ Compiler::Compiler() : lastResult(nullptr), declaredType(nullptr), currentStruct
 const std::unordered_map<Ident, Structure>& Compiler::getStructures() const {
     return structures;
 }
+
+void Compiler::visitStructInh(StructInh *p) {
+
+}
+
+void Compiler::visitMethod(Method *p) {
+
+}
+
+void Compiler::visitEMethod(EMethod *p) {
+
+}
