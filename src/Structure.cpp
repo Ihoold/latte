@@ -6,6 +6,7 @@
 #include <utility>
 #include "Structure.hpp"
 #include "Compiler.hpp"
+#include "ConstVariable.hpp"
 
 Structure::Structure(Ident name_) : name(std::move(name_)) {}
 
@@ -54,5 +55,15 @@ VarPtr Structure::allocateStruct(Compiler* compiler) {
                << " to " << casted_ptr->getType()->getTranslation();
     compiler->getCompiledCode().emplace_back(ss_bitcast.str());
 
+    for (const auto& attr : *this) {
+        auto ptrToAttr = casted_ptr->getField(attr.first, compiler);
+        auto castedPtrToAttr = std::dynamic_pointer_cast<PointerVariable>(ptrToAttr);
+        castedPtrToAttr->store(ConstVariable::getConstDefault(ptrToAttr->getType()), compiler);
+    }
+
     return casted_ptr;
+}
+
+const Ident& Structure::getName() const {
+    return name;
 }

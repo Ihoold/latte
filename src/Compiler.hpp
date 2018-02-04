@@ -25,7 +25,13 @@ private:
     enum class Phase {
         SCANNING_STRUCTURES, SCANNING_DEFINITIONS, COMPILING
     };
+
+    enum class StructPhase {
+        SCANNING_FIELDS, SCANNING_METHODS, COMPILING
+    };
+
     Phase currentPhase = Phase::SCANNING_STRUCTURES;
+    StructPhase currentStructPhase = StructPhase::SCANNING_FIELDS;
 
     std::unordered_map<Ident, Function> functions;
     std::unordered_map<Ident, Structure> structures;

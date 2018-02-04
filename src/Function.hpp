@@ -34,7 +34,7 @@ public:
 
     std::vector<std::pair<Ident, VarPtr>> getArguments() const;
     std::vector<std::unordered_map<Ident, PointerVarPtr>>& getVariables();
-    void initVariables(Compiler*);
+    void initVariables(Compiler*, bool = false);
     void clearBlockVariables(Compiler*);
     PointerVarPtr getVar(const Ident id);
     void putVar(const Ident& id, PointerVarPtr& val);

@@ -32,9 +32,23 @@ int Function::getLastLabel() const {
     return lastLabel;
 }
 
-void Function::initVariables(Compiler* compiler) {
+void Function::initVariables(Compiler* compiler, bool method) {
     variables.clear();
     variables.emplace_back();
+
+    if (method) {
+        auto this_var = arguments.front();
+        auto type = this_var.second->getType();
+        auto struct_type = std::dynamic_pointer_cast<Struct>(type);
+        auto structure = compiler->getStructures().at(struct_type->getIdent_());
+
+        for (const auto& attr : structure) {
+            auto field = this_var.second->getField(attr.first, compiler);
+            auto heapVar = PointerVarPtr(new PointerVariable(field->getType(), field->getCode(compiler)));
+            variables.back()[attr.first] = heapVar;
+        }
+        variables.emplace_back();
+    }
 
     for (auto& arg : arguments) {
         auto heapVar = PointerVarPtr(new PointerVariable(arg.second->getType(), compiler));

@@ -16,7 +16,7 @@ public:
         return true;
     }
 
-    static VarPtr getConstDefault(TypeSpecifier t);
+    static VarPtr getConstDefault(TypePtr t);
 
     VarPtr add(const VarPtr& ptr, Compiler *compiler) override {
         typeCheckFailure("+");

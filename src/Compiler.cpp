@@ -68,6 +68,10 @@ void Compiler::visitProg(Prog *prog) {
         reportError("Type of main function is not int.", prog->line_number);
     }
 
+    if(functions.at("main").getArguments().size() != 0) {
+        reportError("Main function received an argument.", prog->line_number);
+    }
+
     for (auto& global : knownStrings) {
         std::stringstream ss;
         ss << global.second << " = private unnamed_addr constant [ " << global.first.size() + 1 << " x i8] c\"" <<
@@ -150,6 +154,10 @@ void Compiler::visitBlk(Blk *blk) {
     currentFunction.clearBlockVariables(this);
 }
 
+void Compiler::visitStructInh(StructInh *p) {
+    // TODO
+}
+
 void Compiler::visitStructDef(StructDef *p) {
     switch (currentPhase) {
         case Phase::SCANNING_STRUCTURES: {
@@ -158,6 +166,8 @@ void Compiler::visitStructDef(StructDef *p) {
 
             structures.emplace(p->ident_, Structure(p->ident_));
             currentStructure = &structures.at(p->ident_);
+
+            currentStructPhase = StructPhase::SCANNING_FIELDS;
             p->listattribute_->accept(this);
 
             std::stringstream ss;
@@ -168,8 +178,14 @@ void Compiler::visitStructDef(StructDef *p) {
                 first = false;
             }
             ss << " }";
-
             compiledCode.emplace_back(ss.str());
+
+            currentStructPhase = StructPhase::SCANNING_METHODS;
+            p->listattribute_->accept(this);
+
+            currentStructPhase = StructPhase::COMPILING;
+            p->listattribute_->accept(this);
+
             currentStructure = nullptr;
         }
             break;
@@ -179,9 +195,89 @@ void Compiler::visitStructDef(StructDef *p) {
 }
 
 void Compiler::visitAttr(Attr *p) {
-    p->type_->accept(this);
-    if (!typeIsDeclarable(declaredType))
-        reportError("Attribute with forbidden type.", p->line_number);
+    if (currentStructPhase == StructPhase::SCANNING_FIELDS) {
+        p->type_->accept(this);
+        if (!typeIsDeclarable(declaredType))
+            reportError("Attribute with forbidden type.", p->line_number);
+
+        if (std::any_of(currentStructure->begin(), currentStructure->end(),
+                        [p](auto pair){ return pair.first == p->ident_;})) {
+            reportError("Attribute with this name already declared in structure.", p->line_number);
+        }
+
+        currentStructure->emplace_back(p->ident_, declaredType);
+    }
+}
+
+void Compiler::visitMethod(Method *fndef) {
+    auto method_ident = currentStructure->getName() + "_" + fndef->ident_;
+
+    switch (currentStructPhase) {
+        case StructPhase::SCANNING_METHODS: {
+            fndef->type_->accept(this);
+            if (!typeIsDeclarable(declaredType) && declaredType->getTypeSpecifier() != TypeSpecifier::Void)
+                reportError("Cannot declare function of this type.", fndef->line_number);
+
+            if (functions.find(method_ident) != functions.end())
+                reportError("Function " + method_ident + " is already declared.", fndef->line_number);
+
+            auto returnType = declaredType;
+
+            std::vector<std::pair<Ident, VarPtr>> args;
+            args.emplace_back("self",
+                              VarPtr(new RegisterVariable("%self", TypePtr(new Struct(currentStructure->getName())))));
+            for (auto arg : *fndef->listarg_) {
+                auto ar = dynamic_cast<Ar*>(arg);
+
+                ar->type_->accept(this);
+                if (!typeIsDeclarable(declaredType))
+                    reportError("Cannot declare argument of this type.", ar->line_number);
+
+                if (std::any_of(args.begin(), args.end(), [ar](auto a) { return a.first == ar->ident_; })) {
+                    reportError("Duplicated argument name", arg->line_number);
+                }
+
+                std::stringstream ss;
+                ss << "%ar_" << args.size();
+                args.emplace_back(ar->ident_, VarPtr(new RegisterVariable(ss.str(), declaredType)));
+            }
+
+            functions[method_ident] = Function(returnType, args);
+            break;
+        }
+        case StructPhase::COMPILING: {
+            currentFunction = functions[method_ident];
+            currentFunction.setReturnStatements(0);
+            std::string arguments_list;
+            bool first = true;
+            for (auto ar : currentFunction.getArguments()) {
+                arguments_list += ((first) ? "" : ", ") + ar.second->getType()->getTranslation()
+                                  + " " + ar.second->getCode(this);
+                first = false;
+            }
+
+            compiledCode.push_back("define " + functions[method_ident].getReturnType()->getTranslation() + " @" +
+                                           method_ident + "(" + arguments_list + ") {");
+            currentFunction.setLastLabel(currentFunction.getNewLabel(std::vector<int>()).getLabelNum());
+            currentFunction.initVariables(this, true);
+            fndef->block_->accept(this);
+            currentFunction.clearBlockVariables(this);
+            currentFunction.clearBlockVariables(this);
+
+            if (currentFunction.getReturnStatements() == 0) {
+                if(currentFunction.getReturnType()->getTypeSpecifier() != TypeSpecifier::Void) {
+                    reportError("No return statement in function.", fndef->line_number);
+                } else {
+                    compiledCode.emplace_back("\tret void");
+                }
+            }
+            compiledCode.emplace_back("}\n");
+            break;
+        }
+        default:
+            return;
+    }
+
 }
 
 ///////////////////////// LVALS
@@ -623,7 +719,7 @@ void Compiler::visitNoInit(NoInit *noinit) {
                    std::vector<TypeSpecifier>{TypeSpecifier::Int,
                                               TypeSpecifier::Bool,
                                               TypeSpecifier::String})) {
-            auto defaultConst = ConstVariable::getConstDefault(declaredType->getTypeSpecifier());
+            auto defaultConst = ConstVariable::getConstDefault(declaredType);
             heapVar->store(defaultConst, this);
         }
 
@@ -734,43 +830,115 @@ void Compiler::visitELitFalse(ELitFalse *elitfalse) {
 }
 
 void Compiler::visitEApp(EApp *eapp) {
-    if (functions.find(eapp->ident_) == functions.end())
-        reportError("Function " + eapp->ident_ + " undeclared.", eapp->line_number);
+    try {
+        if (functions.find(eapp->ident_) == functions.end())
+            reportError("Function " + eapp->ident_ + " undeclared.", eapp->line_number);
 
-    if (eapp->listexpr_->size() != functions[eapp->ident_].getArguments().size())
-        reportError("Wrong number of function arguments.", eapp->line_number);
+        if (eapp->listexpr_->size() != functions[eapp->ident_].getArguments().size())
+            reportError("Wrong number of function arguments.", eapp->line_number);
 
-    std::stringstream ss;
-    TypePtr retType = functions[eapp->ident_].getReturnType();
-    VarPtr result;
+        std::stringstream ss;
+        TypePtr retType = functions[eapp->ident_].getReturnType();
+        VarPtr result;
 
-    std::stringstream call_stream;
-    std::string arguments;
-    bool first = true;
-    for (auto i = 0; i < functions[eapp->ident_].getArguments().size(); i++) {
-        (*eapp->listexpr_)[i]->accept(this);
+        std::stringstream call_stream;
+        std::string arguments;
+        bool first = true;
+        for (auto i = 0; i < functions[eapp->ident_].getArguments().size(); i++) {
+            (*eapp->listexpr_)[i]->accept(this);
 
-        if (!(*lastResult->getType() == *functions[eapp->ident_].getArguments()[i].second->getType()))
-            reportError("Type of argument and assigned expression doesn't match.", eapp->line_number);
+            if (!(*lastResult->getType() == *functions[eapp->ident_].getArguments()[i].second->getType()))
+                reportError("Type of argument and assigned expression doesn't match.", eapp->line_number);
 
-        call_stream << ((first) ? "" : ", ") << lastResult->getType()->getTranslation() << " " << lastResult->getCode(this);
-        first = false;
+            call_stream << ((first) ? "" : ", ") << lastResult->getType()->getTranslation() << " "
+                        << lastResult->getCode(this);
+            first = false;
+        }
+        call_stream << ")";
+
+        ss << "\t";
+        if (retType->getTypeSpecifier() != TypeSpecifier::Void) {
+            result = currentFunction.getNewRegisterVar(retType);
+            ss << result->getCode(this) << " = ";
+        }
+
+        ss << "call " << retType->getTranslation() << " @" << eapp->ident_ << "(";
+        ss << call_stream.str();
+
+        compiledCode.push_back(ss.str());
+
+        if (retType->getTypeSpecifier() != TypeSpecifier::Void) {
+            lastResult = result;
+        }
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), eapp->line_number);
     }
-    call_stream << ")";
+}
 
-    ss << "\t";
-    if(retType->getTypeSpecifier() != TypeSpecifier::Void) {
-        result = currentFunction.getNewRegisterVar(retType);
-        ss << result->getCode(this) << " = ";
-    }
+void Compiler::visitEMethod(EMethod *p) {
+    try {
+        p->lval_->accept(this);
+        if (lastResult->isLvalue()) {
+            auto ptr = std::dynamic_pointer_cast<PointerVariable>(lastResult);
+            lastResult = ptr->load(this);
+        }
 
-    ss << "call " << retType->getTranslation() << " @" << eapp->ident_ << "(";
-    ss << call_stream.str();
+        auto object = lastResult;
+        if (object->getType()->getTypeSpecifier() != TypeSpecifier::Struct) {
+            reportError("Not a struct type.", p->line_number);
+        }
 
-    compiledCode.push_back(ss.str());
+        auto struct_type = std::dynamic_pointer_cast<Struct>(lastResult->getType());
+        if (structures.find(struct_type->getIdent_()) == structures.end())
+            reportError("Not declared class.", p->line_number);
+        auto structure = structures.at(struct_type->getIdent_());
+        auto method_ident = structure.getName() + "_" +p->ident_;
 
-    if(retType->getTypeSpecifier() != TypeSpecifier::Void) {
-        lastResult = result;
+        if (functions.find(method_ident) == functions.end())
+            reportError("Method undeclared.", p->line_number);
+        auto function = functions.at(method_ident);
+
+        if (p->listexpr_->size() + 1 != function.getArguments().size())
+            reportError("Wrong number of function arguments.", p->line_number);
+
+        TypePtr retType = function.getReturnType();
+        VarPtr result;
+
+        std::stringstream call_stream;
+        std::string arguments;
+
+        if (!(*object->getType() == *function.getArguments()[0].second->getType()))
+            reportError("Wrong object type.", p->line_number);
+
+        call_stream << object->getType()->getTranslation() << " " << object->getCode(this);
+
+        for (auto i = 1; i < function.getArguments().size(); i++) {
+            (*p->listexpr_)[i-1]->accept(this);
+
+            if (!(*lastResult->getType() == *function.getArguments()[i].second->getType()))
+                reportError("Type of argument and assigned expression doesn't match.", p->line_number);
+
+            call_stream << ", " << lastResult->getType()->getTranslation() << " " << lastResult->getCode(this);
+        }
+        call_stream << ")";
+
+        std::stringstream ss;
+        ss << "\t";
+        if(retType->getTypeSpecifier() != TypeSpecifier::Void) {
+            result = currentFunction.getNewRegisterVar(retType);
+            ss << result->getCode(this) << " = ";
+        }
+
+        ss << "call " << retType->getTranslation() << " @" << method_ident << "(";
+        ss << call_stream.str();
+
+        compiledCode.push_back(ss.str());
+
+        if(retType->getTypeSpecifier() != TypeSpecifier::Void) {
+            lastResult = result;
+        }
+    } catch (const std::logic_error& ex) {
+        reportError(ex.what(), p->line_number);
     }
 }
 
@@ -977,14 +1145,6 @@ void Compiler::visitListExpr(ListExpr *listexpr) {
 void Compiler::visitListAttribute(ListAttribute *listattr) {
     for (auto elem : *listattr) {
         elem->accept(this);
-
-        auto attr = dynamic_cast<Attr*>(elem);
-        if (std::any_of(currentStructure->begin(), currentStructure->end(),
-                        [attr](auto pair){ return pair.first == attr->ident_;})) {
-            reportError("Attribute with this name already declared in structure.", elem->line_number);
-        }
-
-        currentStructure->emplace_back(attr->ident_, declaredType);
     }
 }
 
@@ -1026,16 +1186,4 @@ Compiler::Compiler() : lastResult(nullptr), declaredType(nullptr), currentStruct
 
 const std::unordered_map<Ident, Structure>& Compiler::getStructures() const {
     return structures;
-}
-
-void Compiler::visitStructInh(StructInh *p) {
-
-}
-
-void Compiler::visitMethod(Method *p) {
-
-}
-
-void Compiler::visitEMethod(EMethod *p) {
-
 }

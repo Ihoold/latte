@@ -20,6 +20,8 @@ public:
     VarPtr allocateStruct(Compiler*);
 
     std::string getTranslation();
+
+    const Ident& getName() const;
 };
 
 
