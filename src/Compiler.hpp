@@ -8,6 +8,7 @@
 #include <utility>
 #include <set>
 #include <sstream>
+#include <unordered_set>
 
 class Compiler;
 
@@ -15,38 +16,59 @@ class Compiler;
 #include "Label.hpp"
 #include "Variable.hpp"
 #include "Function.hpp"
+#include "Structure.hpp"
 
 using Code = std::vector<std::string>;
 
 class Compiler : public Visitor {
 private:
     enum class Phase {
-        SCANNING_DEFINITIONS, COMPILING
+        SCANNING_STRUCTURES, SCANNING_DEFINITIONS, COMPILING
     };
-    Phase currentPhase = Phase::SCANNING_DEFINITIONS;
+    Phase currentPhase = Phase::SCANNING_STRUCTURES;
 
     std::unordered_map<Ident, Function> functions;
+    std::unordered_map<Ident, Structure> structures;
     Function currentFunction;
+    Structure* currentStructure;
 
     VarPtr lastResult;
-    TypeSpecifier declaredType;
+    TypePtr declaredType;
 
     std::unordered_map<std::string, std::string> knownStrings;
     Code compiledCode;
     void reportError(std::string&& msg, int line);
 public:
-    Compiler() : lastResult(nullptr), declaredType(TypeSpecifier::None) {};
+    Compiler();
 
     Code& getCompiledCode();
     Function& getCurrentFunction();
 
+    const std::unordered_map<Ident, Structure>& getStructures() const;
+
     std::string getGlobalStringName(const std::string&);
 
+    const VarPtr& getLastResult() const;
+
+    void visitAttribute(Attribute *p) override;
+    void visitLVal(LVal *p) override;
+    void visitStructDef(StructDef *p) override;
+    void visitAttr(Attr *p) override;
+    void visitLIdent(LIdent *p) override;
+    void visitLArray(LArray *p) override;
+    void visitLStruct(LStruct *p) override;
+    void visitFor(For *p) override;
+    void visitArray(Array *p) override;
+    void visitStruct(Struct *p) override;
+    void visitENull(ENull *p) override;
+    void visitEArray(EArray *p) override;
+    void visitEStruct(EStruct *p) override;
+    void visitListAttribute(ListAttribute *p) override;
     void visitProgram(Program *p) override;
     void visitTopDef(TopDef *p) override;
     void visitArg(Arg *p) override;
     void visitBlock(Block *p) override;
-    void visitStmt(Stmt *p) override;
+    void visitStmt(Stmt *t) override;
     void visitItem(Item *p) override;
     void visitType(Type *p) override;
     void visitExpr(Expr *p) override;
@@ -75,7 +97,6 @@ public:
     void visitStr(Str *p) override;
     void visitBool(Bool *p) override;
     void visitVoid(Void *p) override;
-    void visitFun(Fun *p) override;
     void visitEVar(EVar *p) override;
     void visitELitInt(ELitInt *p) override;
     void visitELitTrue(ELitTrue *p) override;

@@ -16,7 +16,7 @@ public:
 
     const std::string& getValue() const;
     VarPtr copy() override;
-    TypeSpecifier getType() override;
+    TypePtr getType() override;
     std::string getCode(Compiler *compiler) override;
 
     VarPtr add(const VarPtr& ptr, Compiler* compiler) override;

@@ -3,6 +3,7 @@
 //
 
 #include "ConstBoolVariable.hpp"
+#include "Compiler.hpp"
 
 ConstBoolVariable::ConstBoolVariable(bool b) : value(b) {}
 
@@ -14,33 +15,34 @@ std::string ConstBoolVariable::getCode(Compiler *compiler) {
     return (value) ? "true" : "false";
 }
 
-TypeSpecifier ConstBoolVariable::getType() {
-    return TypeSpecifier::Bool;
+TypePtr ConstBoolVariable::getType() {
+    return TypePtr(new Bool());
 }
 
 VarPtr ConstBoolVariable::copy() {
     return VarPtr(new ConstBoolVariable(value));
 }
 
-VarPtr ConstBoolVariable::band(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Bool)
-        typeCheckFailure("&&");
-
+VarPtr ConstBoolVariable::band(Expr* expr2, Compiler *compiler) {
     if (!value) {
         return VarPtr(new ConstBoolVariable(false));
     } else {
-        return ptr;
+        expr2->accept(compiler);
+        if (compiler->getLastResult()->getType()->getTypeSpecifier() != TypeSpecifier::Bool)
+            typeCheckFailure("&&");
+        return compiler->getLastResult();
     }
 }
 
-VarPtr ConstBoolVariable::bor(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Bool)
-        typeCheckFailure("&&");
+VarPtr ConstBoolVariable::bor(Expr* expr, Compiler *compiler) {
 
     if (value) {
         return VarPtr(new ConstBoolVariable(true));
     } else {
-        return ptr;
+        expr->accept(compiler);
+        if (compiler->getLastResult()->getType()->getTypeSpecifier() != TypeSpecifier::Bool)
+            typeCheckFailure("||");
+        return compiler->getLastResult();
     }
 }
 
@@ -49,26 +51,26 @@ VarPtr ConstBoolVariable::not_(Compiler *compiler) {
 }
 
 VarPtr ConstBoolVariable::eq(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Bool)
-        typeCheckFailure("&&");
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Bool)
+        typeCheckFailure("==");
 
     if (ptr->isConst()) {
-        auto boolVar1 = dynamic_cast<ConstBoolVariable*>(ptr.get());
+        auto boolVar1 = std::dynamic_pointer_cast<ConstBoolVariable>(ptr);
         return VarPtr(new ConstBoolVariable(boolVar1->value == value));
     } else {
-        return ptr->eq(VarPtr(new ConstBoolVariable(value)), compiler);
+        return ptr->eq(copy(), compiler);
     }
 }
 
 VarPtr ConstBoolVariable::neq(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Bool)
-        typeCheckFailure("&&");
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Bool)
+        typeCheckFailure("!=");
 
     if (ptr->isConst()) {
-        auto boolVar1 = dynamic_cast<ConstBoolVariable*>(ptr.get());
+        auto boolVar1 = std::dynamic_pointer_cast<ConstBoolVariable>(ptr);
         return VarPtr(new ConstBoolVariable(boolVar1->value != value));
     } else {
-        return ptr->neq(VarPtr(new ConstBoolVariable(value)), compiler);
+        return ptr->neq(copy(), compiler);
     }
 }
 

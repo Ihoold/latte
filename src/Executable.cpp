@@ -10,6 +10,7 @@
 #include "Printer.hpp"
 #include "Compiler.hpp"
 #include "CompilationException.hpp"
+#include "RegisterVariable.hpp"
 
 std::string getFilename(const std::string& path) {
     auto filenameEnd = path.find_last_of('.');

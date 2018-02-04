@@ -9,11 +9,17 @@ class Program;
 
 class TopDef;
 
+class Attribute;
+
+class ListAttribute;
+
 class ListTopDef;
 
 class Arg;
 
 class ListArg;
+
+class LVal;
 
 class Block;
 
@@ -46,9 +52,12 @@ typedef union {
     char *string_;
     Program *program_;
     TopDef *topdef_;
+    Attribute *attribute_;
+    ListAttribute *listattribute_;
     ListTopDef *listtopdef_;
     Arg *arg_;
     ListArg *listarg_;
+    LVal *lval_;
     Block *block_;
     ListStmt *liststmt_;
     Stmt *stmt_;
@@ -102,9 +111,18 @@ Program *pProgram(const char *str);
 #define _SYMB_30 289
 #define _SYMB_31 290
 #define _SYMB_32 291
-#define _STRING_ 292
-#define _INTEGER_ 293
-#define _IDENT_ 294
+#define _SYMB_33 292
+#define _SYMB_34 293
+#define _SYMB_35 294
+#define _SYMB_36 295
+#define _SYMB_37 296
+#define _SYMB_38 297
+#define _SYMB_39 298
+#define _SYMB_40 299
+#define _SYMB_41 300
+#define _STRING_ 301
+#define _INTEGER_ 302
+#define _IDENT_ 303
 
 extern YYSTYPE yylval;
 

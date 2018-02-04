@@ -8,44 +8,40 @@
 #include "Absyn.hpp"
 #include "Variable.hpp"
 #include "Label.hpp"
+#include "ExtraTypes.hpp"
+
+class PointerVariable;
 
 class Function {
 private:
-    TypeSpecifier returnType = TypeSpecifier::None;
+    TypePtr returnType;
     std::vector<std::pair<Ident, VarPtr>> arguments;
-    std::vector<std::unordered_map<Ident, VarPtr>> variables;
+    std::vector<std::unordered_map<Ident, PointerVarPtr>> variables;
 
     int counter = 0;
     int lastLabel = 0;
     int returnStatements = 0;
-    int phi_count = 0;
-
 public:
-    std::shared_ptr<std::unordered_map<Ident, std::pair<int, VarPtr>>> whileVars = nullptr;
+    Function();
+    Function(TypePtr type, std::vector<std::pair<Ident, VarPtr>> args);
 
-    Function() = default;
-    Function(TypeSpecifier type, std::vector<std::pair<Ident, VarPtr>> args);
-
-    std::vector<std::string> joinVariablesBlocks(std::vector<std::unordered_map<Ident, VarPtr>>, Compiler*, int, int);
-
-    std::shared_ptr<Variable> getNewPhiVar(TypeSpecifier);
-    std::shared_ptr<Variable> getNewRegisterVar(TypeSpecifier);
+    std::string getNewRegister();
+    VarPtr getNewRegisterVar(TypePtr);
     Label getNewLabel(std::vector<int> preds);
 
     void setLastLabel(int lastLabel);
     int getLastLabel() const;
 
     std::vector<std::pair<Ident, VarPtr>> getArguments() const;
-    std::vector<std::unordered_map<Ident, VarPtr>>& getVariables();
-    void initVariables();
-    void clearBlockVariables();
-    VarPtr getVar(const Ident& id);
-    void putVar(const Ident& id, const VarPtr& val);
-    void changeVar(const Ident& id, VarPtr val);
+    std::vector<std::unordered_map<Ident, PointerVarPtr>>& getVariables();
+    void initVariables(Compiler*);
+    void clearBlockVariables(Compiler*);
+    PointerVarPtr getVar(const Ident id);
+    void putVar(const Ident& id, PointerVarPtr& val);
 
     int getReturnStatements() const;
     void setReturnStatements(int returnStatements);
-    const TypeSpecifier getReturnType() const;
+    const TypePtr getReturnType() const;
 };
 
 

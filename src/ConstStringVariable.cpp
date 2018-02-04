@@ -7,12 +7,16 @@
 #include "Compiler.hpp"
 
 VarPtr ConstStringVariable::add(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::String)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::String)
         typeCheckFailure("+");
 
     if (ptr->isConst()) {
-        auto strVar = dynamic_cast<ConstStringVariable*>(ptr.get());
-        return VarPtr(new ConstStringVariable(value + strVar->getValue()));
+        VarPtr result(compiler->getCurrentFunction().getNewRegisterVar(ptr->getType()));
+        std::stringstream ss;
+        ss << "\t" << result->getCode(compiler) << " = call i8* @concat(i8* " << getCode(compiler)
+           << ", i8* " << ptr->getCode(compiler) << ")";
+        compiler->getCompiledCode().push_back(ss.str());
+        return result;
     } else {
         ptr->swap = true;
         return ptr->add(copy(), compiler);
@@ -21,13 +25,13 @@ VarPtr ConstStringVariable::add(const VarPtr& ptr, Compiler *compiler) {
 
 std::string ConstStringVariable::getCode(Compiler *compiler) {
     std::stringstream ss;
-    ss << "getelementptr inbounds ([" << value.size() << " x i8], [" << value.size() << " x i8]* "
+    ss << "getelementptr inbounds ([" << value.size() + 1 << " x i8], [" << value.size() + 1 << " x i8]* "
        << compiler->getGlobalStringName(value) << ", i64 0, i64 0)";
     return ss.str();
 }
 
-TypeSpecifier ConstStringVariable::getType() {
-    return TypeSpecifier::String;
+TypePtr ConstStringVariable::getType() {
+    return TypePtr(new Str());
 }
 
 VarPtr ConstStringVariable::copy() {

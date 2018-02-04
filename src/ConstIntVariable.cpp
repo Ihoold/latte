@@ -12,8 +12,8 @@ std::string ConstIntVariable::getCode(Compiler *compiler) {
     return ss.str();
 }
 
-TypeSpecifier ConstIntVariable::getType() {
-    return TypeSpecifier::Int;
+TypePtr ConstIntVariable::getType() {
+    return TypePtr(new Int());
 }
 
 VarPtr ConstIntVariable::copy() {
@@ -21,36 +21,28 @@ VarPtr ConstIntVariable::copy() {
 }
 
 VarPtr ConstIntVariable::add(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("+");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstIntVariable(value + intVar1->value));
     } else {
-        return ptr->add(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->add(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::sub(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("-");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstIntVariable(value - intVar1->value));
     } else {
         ptr->swap = true;
-        return ptr->sub(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->sub(copy(), compiler);
     }
-}
-
-void ConstIntVariable::incr(Compiler *compiler) {
-    value++;
-}
-
-void ConstIntVariable::decr(Compiler *compiler) {
-    value--;
 }
 
 VarPtr ConstIntVariable::neg(Compiler *compiler) {
@@ -58,116 +50,116 @@ VarPtr ConstIntVariable::neg(Compiler *compiler) {
 }
 
 VarPtr ConstIntVariable::mul(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("*");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstIntVariable(value * intVar1->value));
     } else {
-        return ptr->mul(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->mul(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::div(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("/");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstIntVariable(value / intVar1->value));
     } else {
         ptr->swap = true;
-        return ptr->div(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->div(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::rem(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("%");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstIntVariable(value % intVar1->value));
     } else {
         ptr->swap = true;
-        return ptr->rem(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->rem(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::lt(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("<");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstBoolVariable(value < intVar1->value));
     } else {
         ptr->swap = true;
-        return ptr->lt(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->lt(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::lte(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("<=");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstBoolVariable(value <= intVar1->value));
     } else {
         ptr->swap = true;
-        return ptr->lte(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->lte(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::gt(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure(">");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstBoolVariable(value > intVar1->value));
     } else {
         ptr->swap = true;
-        return ptr->gt(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->gt(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::gte(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure(">=");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstBoolVariable(value >= intVar1->value));
     } else {
         ptr->swap = true;
-        return ptr->gte(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->gte(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::eq(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("==");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstBoolVariable(value == intVar1->value));
     } else {
-        return ptr->eq(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->eq(copy(), compiler);
     }
 }
 
 VarPtr ConstIntVariable::neq(const VarPtr& ptr, Compiler *compiler) {
-    if (ptr->getType() != TypeSpecifier::Int)
+    if (ptr->getType()->getTypeSpecifier() != TypeSpecifier::Int)
         typeCheckFailure("!=");
 
     if (ptr->isConst()) {
-        auto intVar1 = dynamic_cast<ConstIntVariable*>(ptr.get());
+        auto intVar1 = std::dynamic_pointer_cast<ConstIntVariable>(ptr);
         return VarPtr(new ConstBoolVariable(value != intVar1->value));
     } else {
-        return ptr->neq(VarPtr(new ConstIntVariable(value)), compiler);
+        return ptr->neq(copy(), compiler);
     }
 }
 

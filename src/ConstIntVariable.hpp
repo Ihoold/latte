@@ -15,7 +15,7 @@ public:
     explicit ConstIntVariable(int i = 0);
 
     std::string getCode(Compiler *compiler) override;
-    TypeSpecifier getType() override;
+    TypePtr getType() override;
     VarPtr copy() override;
 
     VarPtr add(const VarPtr& ptr, Compiler* compiler) override;
@@ -24,9 +24,6 @@ public:
     VarPtr mul(const VarPtr& ptr, Compiler* compiler) override;
     VarPtr div(const VarPtr& ptr, Compiler* compiler) override;
     VarPtr rem(const VarPtr& ptr, Compiler* compiler) override;
-
-    void incr(Compiler *compiler) override;
-    void decr(Compiler *compiler) override;
 
     VarPtr lt(const VarPtr& ptr, Compiler* compiler) override;
     VarPtr lte(const VarPtr& ptr, Compiler* compiler) override;

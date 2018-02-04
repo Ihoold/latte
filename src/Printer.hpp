@@ -41,12 +41,26 @@ public:
     void visitTopDef(TopDef *p); /* abstract class */
     void visitFnDef(FnDef *p);
 
+    void visitStructDef(StructDef *p);
+
+    void visitAttribute(Attribute *p); /* abstract class */
+    void visitAttr(Attr *p);
+
+    void visitListAttribute(ListAttribute *p);
+
     void visitListTopDef(ListTopDef *p);
 
     void visitArg(Arg *p); /* abstract class */
     void visitAr(Ar *p);
 
     void visitListArg(ListArg *p);
+
+    void visitLVal(LVal *p); /* abstract class */
+    void visitLIdent(LIdent *p);
+
+    void visitLArray(LArray *p);
+
+    void visitLStruct(LStruct *p);
 
     void visitBlock(Block *p); /* abstract class */
     void visitBlk(Blk *p);
@@ -76,6 +90,8 @@ public:
 
     void visitWhile(While *p);
 
+    void visitFor(For *p);
+
     void visitSExp(SExp *p);
 
     void visitItem(Item *p); /* abstract class */
@@ -94,12 +110,16 @@ public:
 
     void visitVoid(Void *p);
 
-    void visitFun(Fun *p);
+    void visitArray(Array *p);
+
+    void visitStruct(Struct *p);
 
     void visitListType(ListType *p);
 
     void visitExpr(Expr *p); /* abstract class */
     void visitEVar(EVar *p);
+
+    void visitENull(ENull *p);
 
     void visitELitInt(ELitInt *p);
 
@@ -110,6 +130,10 @@ public:
     void visitEApp(EApp *p);
 
     void visitEString(EString *p);
+
+    void visitEArray(EArray *p);
+
+    void visitEStruct(EStruct *p);
 
     void visitNeg(Neg *p);
 
@@ -230,12 +254,26 @@ public:
     void visitTopDef(TopDef *p); /* abstract class */
     void visitFnDef(FnDef *p);
 
+    void visitStructDef(StructDef *p);
+
+    void visitAttribute(Attribute *p); /* abstract class */
+    void visitAttr(Attr *p);
+
+    void visitListAttribute(ListAttribute *p);
+
     void visitListTopDef(ListTopDef *p);
 
     void visitArg(Arg *p); /* abstract class */
     void visitAr(Ar *p);
 
     void visitListArg(ListArg *p);
+
+    void visitLVal(LVal *p); /* abstract class */
+    void visitLIdent(LIdent *p);
+
+    void visitLArray(LArray *p);
+
+    void visitLStruct(LStruct *p);
 
     void visitBlock(Block *p); /* abstract class */
     void visitBlk(Blk *p);
@@ -265,6 +303,8 @@ public:
 
     void visitWhile(While *p);
 
+    void visitFor(For *p);
+
     void visitSExp(SExp *p);
 
     void visitItem(Item *p); /* abstract class */
@@ -283,12 +323,16 @@ public:
 
     void visitVoid(Void *p);
 
-    void visitFun(Fun *p);
+    void visitArray(Array *p);
+
+    void visitStruct(Struct *p);
 
     void visitListType(ListType *p);
 
     void visitExpr(Expr *p); /* abstract class */
     void visitEVar(EVar *p);
+
+    void visitENull(ENull *p);
 
     void visitELitInt(ELitInt *p);
 
@@ -299,6 +343,10 @@ public:
     void visitEApp(EApp *p);
 
     void visitEString(EString *p);
+
+    void visitEArray(EArray *p);
+
+    void visitEStruct(EStruct *p);
 
     void visitNeg(Neg *p);
 

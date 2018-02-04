@@ -1,22 +1,58 @@
 //
-// Created by ihoold on 20.01.18.
+// Created by ihoold on 31.01.18.
 //
 
-#ifndef INSTANT_CONSTVARIABLE_HPP
-#define INSTANT_CONSTVARIABLE_HPP
+#ifndef LATTE_EXTRATYPES_HPP
+#define LATTE_EXTRATYPES_HPP
+
+#include <memory>
+
+class PointerVariable;
+using PointerVarPtr = std::shared_ptr<PointerVariable>;
 
 #include "Variable.hpp"
-#include "ExtraTypes.hpp"
 
-class ConstVariable : public Variable {
-protected:
-    virtual bool isEqual(const Variable& b) const = 0;
+class SizedArray : public Type {
+    std::shared_ptr<Array> array;
 public:
-    bool isConst() override {
-        return true;
-    }
+    explicit SizedArray(std::shared_ptr<Array> array);
 
-    static VarPtr getConstDefault(TypeSpecifier t);
+    void accept(Visitor *v) override;
+
+    Type *clone() const override;
+
+    const TypeSpecifier getTypeSpecifier() const override;
+
+    std::string getTranslation() const override;
+
+    const std::shared_ptr<Array>& getArray() const;
+
+    VarPtr getElementSize(Compiler*);
+
+    VarPtr allocateArray(VarPtr, Compiler*);
+
+    VarPtr createArrayStruct(VarPtr, VarPtr, Compiler*);
+};
+
+class PointerVariable : public Variable {
+    TypePtr type;
+    std::string reg;
+protected:
+    bool isEqual(const Variable& obj) const override;
+public:
+    PointerVariable(TypePtr, Compiler*);
+    PointerVariable(TypePtr, std::string);
+    void store(VarPtr, Compiler*);
+    VarPtr load(Compiler*);
+
+    TypePtr getType() override;
+
+    bool isLvalue() override;
+    bool isConst() override;
+
+    std::string getCode(Compiler *compiler) override;
+
+    VarPtr copy() override;
 
     VarPtr add(const VarPtr& ptr, Compiler *compiler) override {
         typeCheckFailure("+");
@@ -76,7 +112,6 @@ public:
         typeCheckFailure("[]");
     }
 
-    VarPtr copy() override = 0;
 };
 
-#endif //INSTANT_CONSTVARIABLE_HPP
+#endif //LATTE_EXTRATYPES_HPP

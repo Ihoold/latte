@@ -16,11 +16,11 @@ public:
 
     bool getValue() const;
     std::string getCode(Compiler *compiler) override;
-    TypeSpecifier getType() override;
+    TypePtr getType() override;
     VarPtr copy() override;
 
-    VarPtr band(const VarPtr& ptr, Compiler* compiler) override;
-    VarPtr bor(const VarPtr& ptr, Compiler* compiler) override;
+    VarPtr band(Expr*, Compiler* compiler) override;
+    VarPtr bor(Expr*, Compiler* compiler) override;
     VarPtr not_(Compiler* compiler) override;
 
     VarPtr eq(const VarPtr& ptr, Compiler* compiler) override;
